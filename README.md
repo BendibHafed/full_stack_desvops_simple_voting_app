@@ -1,4 +1,4 @@
-# 🗳️ Voting App (DevOps Demo)
+# Voting App (DevOps Demo)
 
 A simple full-stack **Voting Web Application** built with:
 - **Frontend**: HTML, CSS, JavaScript (served via Nginx)
@@ -10,7 +10,7 @@ CI/CD powered by **GitHub Actions**.
 
 ---
 
-## 🚀 Features
+## Features
 - Vote for predefined options
 - View real-time vote counts
 - API endpoints (`/options`, `/vote`, `/healthz`)
@@ -18,7 +18,7 @@ CI/CD powered by **GitHub Actions**.
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 devops-voting-app/
 ├── app/
 │ ├── frontend/ # HTML, CSS, JS
