@@ -19,7 +19,7 @@ CI/CD powered by **GitHub Actions**.
 ---
 
 ## Repository Structure
-devops-voting-app/
+devops-voting-app/ </br>
 ├── app/
 │ ├── frontend/ # HTML, CSS, JS
 │ └── backend/ # Flask app + tests
