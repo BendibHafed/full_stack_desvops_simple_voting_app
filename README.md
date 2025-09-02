@@ -28,3 +28,45 @@ devops-voting-app/ </br>
 │ └── ansible/ # Configuration & deployment </br>
 ├── .github/workflows/ # CI/CD pipelines </br>
 └── README.md </br>
+
+---
+
+## Tech Stack
+
+- **Frontend**: Nginx serving static files
+- **Backend**: Flask + Gunicorn
+- **Database**: PostgreSQL (RDS)
+- **Infra**: AWS (Terraform)
+- **Config Management**: Ansible
+- **CI/CD**: GitHub Actions
+
+---
+
+## Testing
+
+- **Unit tests**: Flask backend routes  
+- **Integration tests**: Backend ↔ DB  
+- **Smoke tests**: Health checks after deployment  
+
+Run locally:
+```bash
+cd app/backend
+pytest
+```
+## Deployment Workflow
+- CI pipeline runs on PR:
+- Python lint + unit tests
+- Terraform validate + lint
+- Ansible lint
+- Frontend lint (HTML/CSS/JS)
+## CD pipeline runs on main:
+- terraform apply (EC2 + RDS)
+- ansible-playbook (install Nginx, deploy frontend/backend)
+- Run smoke tests (check API + homepage)
+## Future Improvements
+- Add authentication
+- Containerize with Docker & Kubernetes
+- Add monitoring (Prometheus + Grafana)
+- Improve frontend with React
+## Author
+Built as a DevOps Engineering Demo Project — showing end-to-end CI/CD, Infrastructure as Code, and automated deployment.
