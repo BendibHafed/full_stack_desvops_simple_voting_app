@@ -20,11 +20,11 @@ CI/CD powered by **GitHub Actions**.
 
 ## Repository Structure
 devops-voting-app/ </br>
-├── app/
-│ ├── frontend/ # HTML, CSS, JS
-│ └── backend/ # Flask app + tests
-├── infra/
-│ ├── terraform/ # Infrastructure as Code (AWS)
-│ └── ansible/ # Configuration & deployment
-├── .github/workflows/ # CI/CD pipelines
-└── README.md
+├── app/ </br>
+│ ├── frontend/ # HTML, CSS, JS </br>
+│ └── backend/ # Flask app + tests </br>
+├── infra/ </br>
+│ ├── terraform/ # Infrastructure as Code (AWS) </br>
+│ └── ansible/ # Configuration & deployment </br>
+├── .github/workflows/ # CI/CD pipelines </br>
+└── README.md </br>
