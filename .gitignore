@@ -12,6 +12,7 @@ dist/
 *.egg-info/
 *.egg
 MANIFEST
+package/
 
 # PyInstaller
 *.spec
@@ -52,6 +53,11 @@ instance/
 .webassets-cache
 .flaskenv
 
+# Flask instance folder (local config, DB, etc.)
+instance/
+*.db
+*.sqlite3
+
 # Sphinx
 docs/_build/
 
@@ -67,7 +73,7 @@ docs/_build/
 #.idea/
 
 # VS Code (optional)
-#.vscode/
+.vscode/
 
 # Terraform (if using local state)
 *.tfstate
@@ -76,7 +82,7 @@ docs/_build/
 crash.log
 *.backup
 .terraform.lock.hcl
-
+terraform.tfstate.backup
 terraform.tfvars
 *.auto.tfvars
 
@@ -93,3 +99,7 @@ __pypackages__/
 .secrets
 *.secrets
 secrets/
+
+# Docker
+*.pid
+docker-compose.override.yml
