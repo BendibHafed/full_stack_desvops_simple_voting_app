@@ -41,4 +41,8 @@ def api_vote(poll_id):
     # increment and commit
     choice.votes = choice.votes + 1
     db.session.commit()
-    return jsonify({"status": "ok", "choice_id": choice.id, "votes": choice.votes})
+    return jsonify(
+        {"status": "ok",
+         "choice_id": choice.id,
+         "votes": choice.votes}
+         )

@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 def seed_data():
     app = create_app()
     with app.app_context():
-        db.drop_all()   # Reset database (optional, remove if you want to keep old data)
+        db.drop_all()   # Reset database
         db.create_all()
 
         # Example poll

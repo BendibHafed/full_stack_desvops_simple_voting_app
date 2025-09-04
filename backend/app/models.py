@@ -6,7 +6,10 @@ class Poll(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     question = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
-    choices = db.relationship("Choice", backref="poll", cascade="all, delete-orphan")
+    choices = db.relationship(
+        "Choice",
+        backref="poll",
+        cascade="all, delete-orphan")
 
 
 class Choice(db.Model):
