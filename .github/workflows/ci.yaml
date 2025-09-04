@@ -17,9 +17,11 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: voting
         options: >-
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+          options: >-
+            --health-cmd pg_isready
+            --health-interval=10s
+            --health-timeout=5s
+            --health-retries=5
     
     steps:
       # 1. checkout code
@@ -44,14 +46,23 @@ jobs:
         run: |
           flake8 backend
       
-      # 5. run tests
+      # 7. Wait for Postgres to be ready
+      - name: Wait for Postgres to be ready
+        run: |
+            for i in {1..10}; do
+            pg_isready -h localhost -p 5432 && break
+            echo "Waiting for Postgres..."
+            sleep 2
+            done
+
+      # 6. run tests
       - name: Run tests
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/voting
           FLASK_CONFIG: TestingConfig
         run: pytest -v
       
-      # 6. Login Github Container Registry (ghcr.io)
+      # 7. Login Github Container Registry (ghcr.io)
       - name: Log in registry
         uses: docker/login-action@v3
         with:
