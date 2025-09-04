@@ -1,5 +1,5 @@
 import os
-from app import create_app
+from backend.app import create_app
 
 # Read the Env. var. called FLASK_CONFIG
 config_name = os.getenv("FLASK_CONFIG")
