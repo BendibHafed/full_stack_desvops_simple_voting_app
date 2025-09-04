@@ -17,11 +17,10 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: voting
         options: >-
-          options: >-
-            --health-cmd pg_isready
-            --health-interval=10s
-            --health-timeout=5s
-            --health-retries=5
+          --health-cmd pg_isready
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     
     steps:
       # 1. checkout code
