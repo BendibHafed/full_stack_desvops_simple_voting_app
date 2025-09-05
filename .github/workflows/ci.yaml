@@ -45,7 +45,7 @@ jobs:
         run: |
           flake8 backend
 
-      # 7. Wait for Postgres to be ready
+      # 5. Wait for Postgres to be ready
       - name: Wait for Postgres to be ready
         run: |
             for i in {1..10}; do
@@ -73,10 +73,11 @@ jobs:
       - name: Set lowercase repo slug
         run: echo "REPO_SLUG=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      # 7. build and push Docker image
+      # 9. build and push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           tags: ghcr.io/${{ env.REPO_SLUG }}/voting-app:latest
