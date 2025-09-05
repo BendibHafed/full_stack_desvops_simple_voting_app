@@ -1,8 +1,10 @@
 # Voting App (DevOps Demo)
 
-![CI](https://github.com/BendibHafed/REPO/actions/workflows/ci.yml/badge.svg)  
-![License](https://img.shields.io/github/license/BendibHafed/REPO)  
-![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2FBendibHafed%2FREPO-blue)
+
+![CI](https://github.com/BendibHafed/full_stack_desvops_simple_voting_app/actions/workflows/ci.yml/badge.svg)  
+![License](https://img.shields.io/github/license/BendibHafed/full_stack_desvops_simple_voting_app)  
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2FBendibHafed%2Ffull_stack_desvops_simple_voting_app-blue)](https://ghcr.io/BendibHafed/full_stack_desvops_simple_voting_app)
+
 
 A simple full-stack **Voting Web Application** built with:
 - **Frontend**: HTML, CSS, JavaScript (served by Flask in the same container for simplicity)
