@@ -63,7 +63,7 @@ jobs:
       # 5. Terraform Init
       - name: Terraform Init
         working-directory: infra/terraform
-        run: terraform init input=false
+        run: terraform init -input=false
       
       # 6. Terraform Plan
       - name: Terraform plan
