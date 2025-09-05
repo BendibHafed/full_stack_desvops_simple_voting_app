@@ -80,13 +80,14 @@ jobs:
 
       # 9. Setup Terraform Plugin Cache (only if not ACT)
       - name: Setup Terraform Plugin Cache
+        working-directory: infra/terraform
         run: |
           mkdir -p ~/.terraform.d/plugin-cache
           echo 'plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
 
       # 10. Terraform Init (Local State for CI)
       - name: Terraform Init (Local State)
-        working-directory: terraform
+        working-directory: infra/terraform
         run: |
           rm -rf .terraform .terraform.lock.hcl
           cat > backend_override.tf <<EOF
@@ -98,18 +99,18 @@ jobs:
 
       # 11. Terraform Format Check
       - name: Terraform Format Check
-        working-directory: terraform
+        working-directory: infra/terraform
         continue-on-error: true
         run: terraform fmt -check -diff -recursive
 
       # 12. Terraform Validate
       - name: Terraform Validate
-        working-directory: terraform
+        working-directory: infra/terraform
         run: terraform validate -no-color
 
       # 13. Terraform Plan (Local State / LocalStack)
       - name: Terraform Plan (Local State)
-        working-directory: terraform
+        working-directory: infra/terraform
         run: terraform plan \
               -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
               -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
