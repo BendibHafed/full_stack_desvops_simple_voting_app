@@ -13,7 +13,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:16
         ports: ["5432:5432"]
         env:
           POSTGRES_USER: postgres
@@ -63,6 +63,22 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/voting
           FLASK_CONFIG: TestingConfig
         run: pytest -v
+
+      # 7. Lint Terraform
+      - name: Terraform Linting
+        working-directory: infra/terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        working-directory: infra/terraform
+        run: terraform validate
+
+      # 8. Terraform Init and Plan
+      - name: Terraform Init + Plan
+        working-directory: infra/terraform
+        run: |
+          terraform init -backend=false
+          terraform plan -detailed-exitcode || true
 
       # 7. Login Github Container Registry (ghcr.io)
       - name: Log in registry
