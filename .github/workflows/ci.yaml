@@ -64,7 +64,12 @@ jobs:
           FLASK_CONFIG: TestingConfig
         run: pytest -v
 
-      # 7. Terraform Init
+      # 7. Terraform Setup & Init
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.0
+
       - name: Terraform Init
         working-directory: infra/terraform
         run: terraform init -backend=false
