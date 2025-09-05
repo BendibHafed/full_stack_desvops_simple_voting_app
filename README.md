@@ -3,7 +3,7 @@
 
 ![CI](https://github.com/BendibHafed/full_stack_desvops_simple_voting_app/actions/workflows/ci.yml/badge.svg)  
 ![License](https://img.shields.io/github/license/BendibHafed/full_stack_desvops_simple_voting_app)  
-[![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2FBendibHafed%2Ffull_stack_desvops_simple_voting_app-blue)](https://ghcr.io/BendibHafed/full_stack_desvops_simple_voting_app)
+![Docker Image](https://github.com/BendibHafed/full_stack_desvops_simple_voting_app/pkgs/container/full_stack_desvops_simple_voting_app%2Fvoting-app)
 
 
 A simple full-stack **Voting Web Application** built with:
