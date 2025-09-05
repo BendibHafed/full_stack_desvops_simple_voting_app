@@ -111,10 +111,13 @@ jobs:
       # 13. Terraform Plan (Local State / LocalStack)
       - name: Terraform Plan (Local State)
         working-directory: infra/terraform
-        run: terraform plan \
-              -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
-              -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-              -input=false -no-color -lock=false
+        run: |
+          terraform plan \
+            -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            -input=false \
+            -no-color \
+            -lock=false
 
       # 10. Login Github Container Registry (ghcr.io)
       - name: Log in registry
