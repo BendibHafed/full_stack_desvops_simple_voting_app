@@ -11,7 +11,7 @@ COPY backend/requirements.txt ./backend/requirements.txt
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
 # Copy backend and frontend into the image
-# (Your Flask app serves templates/static from ../frontend)
+# (Flask app serves templates/static from ../frontend)
 COPY backend ./backend
 COPY frontend ./frontend
 
