@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/BendibHafed/REPO/actions/workflows/ci.yml/badge.svg)  
 ![License](https://img.shields.io/github/license/BendibHafed/REPO)  
-![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2FUSERNAME%2FREPO-blue)
+![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2FBendibHafed%2FREPO-blue)
 
 A simple full-stack **Voting Web Application** built with:
 - **Frontend**: HTML, CSS, JavaScript (served by Flask in the same container for simplicity)
