@@ -1,0 +1,29 @@
+name: CD
+
+on: 
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+      packages: read # Allows to pull Docker image from GHCR
+
+    steps:
+      # 1. Checkout the repos
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      # 2. AWS OIDC auth and Test credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::699663434651:role/github-actions-role
+          aws-region: eu-west-3
+
+      - name: Test AWS credentials
+        run: aws sts get-caller-identity
