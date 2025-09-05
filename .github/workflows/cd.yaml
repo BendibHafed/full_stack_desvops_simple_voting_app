@@ -18,12 +18,13 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      # 2. AWS OIDC auth and Test credentials
+      # 2. Configure AWS credentials (GitHub Actions)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::699663434651:role/github-actions-role
-          aws-region: eu-west-3
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Test AWS credentials
         run: aws sts get-caller-identity
