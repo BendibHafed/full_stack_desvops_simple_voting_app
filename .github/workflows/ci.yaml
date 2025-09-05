@@ -86,7 +86,7 @@ jobs:
       # 9. Terraform Plan
       - name: Terraform Plan
         working-directory: infra/terraform
-        run: terraform plan -detailed-exitcode -input=false || true
+        run: terraform plan -detailed-exitcode -input=false -lock=false || true
 
       # 10. Login Github Container Registry (ghcr.io)
       - name: Log in registry
