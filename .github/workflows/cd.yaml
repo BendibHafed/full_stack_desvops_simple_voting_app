@@ -20,7 +20,6 @@ jobs:
 
       # 2. Configure AWS credentials (GitHub Actions)
       - name: Configure AWS credentials
-        if: ${{ !env.ACT }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
