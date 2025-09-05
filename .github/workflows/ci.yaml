@@ -13,7 +13,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:16
         ports: ["5432:5432"]
         env:
           POSTGRES_USER: postgres
@@ -64,7 +64,62 @@ jobs:
           FLASK_CONFIG: TestingConfig
         run: pytest -v
 
-      # 7. Login Github Container Registry (ghcr.io)
+      # 7. Terraform Setup
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.0
+
+        # 8. Configure AWS credentials (only if not ACT)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 9. Setup Terraform Plugin Cache (only if not ACT)
+      - name: Setup Terraform Plugin Cache
+        working-directory: infra/terraform
+        run: |
+          mkdir -p ~/.terraform.d/plugin-cache
+          echo 'plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
+
+      # 10. Terraform Init (Local State for CI)
+      - name: Terraform Init (Local State)
+        working-directory: infra/terraform
+        run: |
+          rm -rf .terraform .terraform.lock.hcl
+          cat > backend_override.tf <<EOF
+          terraform {
+            backend "local" {}
+          }
+          EOF
+          terraform init -reconfigure -input=false -no-color
+
+      # 11. Terraform Format Check
+      - name: Terraform Format Check
+        working-directory: infra/terraform
+        continue-on-error: true
+        run: terraform fmt -check -diff -recursive
+
+      # 12. Terraform Validate
+      - name: Terraform Validate
+        working-directory: infra/terraform
+        run: terraform validate -no-color
+
+      # 13. Terraform Plan (Local State / LocalStack)
+      - name: Terraform Plan (Local State)
+        working-directory: infra/terraform
+        run: |
+          terraform plan \
+            -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            -input=false \
+            -no-color \
+            -lock=false
+
+      # 10. Login Github Container Registry (ghcr.io)
       - name: Log in registry
         uses: docker/login-action@v3
         with:
@@ -72,11 +127,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }} 
 
-      # 8. Login Github Container Registry (ghcr.io
+      # 11. Login Github Container Registry (ghcr.io
       - name: Set lowercase repo slug
         run: echo "REPO_SLUG=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      # 9. build and push Docker image
+      # 12. build and push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
