@@ -1,6 +1,6 @@
 # Voting App (DevOps Demo)
 
-![CI](https://github.com/USERNAME/REPO/actions/workflows/ci.yml/badge.svg)  
+![CI](https://github.com/HafedBendib/REPO/actions/workflows/ci.yml/badge.svg)  
 ![License](https://img.shields.io/github/license/USERNAME/REPO)  
 ![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2FUSERNAME%2FREPO-blue)
 
