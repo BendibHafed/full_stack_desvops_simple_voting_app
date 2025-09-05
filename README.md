@@ -1,8 +1,8 @@
 # Voting App (DevOps Demo)
 
 A simple full-stack **Voting Web Application** built with:
-- **Frontend**: HTML, CSS, JavaScript (served via Nginx)
-- **Backend**: Python Flask (Gunicorn + Systemd)
+- **Frontend**: HTML, CSS, JavaScript (served by Flask in the same container for simplicity)
+- **Backend**: Python Flask (with Gunicorn)
 - **Database**: PostgreSQL
 
 Deployed to **AWS (EC2 + RDS)** with **Terraform** (infrastructure) and **Ansible** (configuration management).  
@@ -13,8 +13,8 @@ CI/CD powered by **GitHub Actions**.
 ## Features
 - Vote for predefined options
 - View real-time vote counts
-- API endpoints (`/options`, `/vote`, `/healthz`)
-- Automated tests & deployments
+- API endpoints (/api/polls, /api/polls/<id>/vote, /healthz)
+- Automated linting, tests, build and deployments
 
 ---
 
@@ -33,19 +33,50 @@ devops-voting-app/ </br>
 
 ## Tech Stack
 
-- **Frontend**: Nginx serving static files
+- **Frontend**: Static files (HTML, CSS, JS) served by Flask (later: Separate Nginx container)
 - **Backend**: Flask + Gunicorn
-- **Database**: PostgreSQL (RDS)
+- **Database**: PostgreSQL (locally in Docker, RDS in AWS)
 - **Infra**: AWS (Terraform)
 - **Config Management**: Ansible
 - **CI/CD**: GitHub Actions
 
 ---
 
+## Quickstart (Local Development)
+### Prerequisites
+
+* Docker & Docker Compose installed
+* Python 3.12 (only if running locally without Docker)
+
+Run with Docker Compose
+# From the project root
+```bash
+docker compose up -d --build
+```
+Frontend: http://localhost:5000
+
+# Run Locally without Docker
+```bash
+# Install dependencies
+cd backend
+pip install -r requirements.txt
+
+# Set environment variables
+export FLASK_CONFIG=DevelopmentConfig
+export DATABASE_URL=sqlite:///dev.db
+
+# Initialize DB and seed data
+python -m backend.seed
+
+# Start app
+python -m backend.run
+```
+---
+
 ## Testing
 
 - **Unit tests**: Flask backend routes  
-- **Integration tests**: Backend ↔ DB  
+- **Integration tests**: Backend ↔ PostgreSQL
 - **Smoke tests**: Health checks after deployment  
 
 Run locally:
@@ -58,15 +89,19 @@ pytest
 
 ## Deployment Workflow
 - CI pipeline runs on PR:
-- Python lint + unit tests
+- Python lint 
+- Unit/integration tests (pytest) against PostgreSQL
 - Terraform validate + lint
 - Ansible lint
 - Frontend lint (HTML/CSS/JS)
+- Build Docker image
+- Push image to GitHub Container Registry (GHCR)
+
 ---
 
 ## CD pipeline runs on main:
 - terraform apply (EC2 + RDS)
-- ansible-playbook (install Nginx, deploy frontend/backend)
+- ansible-playbook (install Docker, deploy container)
 - Run smoke tests (check API + homepage)
 
 ---
