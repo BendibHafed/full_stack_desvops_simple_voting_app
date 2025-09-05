@@ -1,5 +1,9 @@
 # Voting App (DevOps Demo)
 
+![CI](https://github.com/USERNAME/REPO/actions/workflows/ci.yml/badge.svg)  
+![License](https://img.shields.io/github/license/USERNAME/REPO)  
+![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2FUSERNAME%2FREPO-blue)
+
 A simple full-stack **Voting Web Application** built with:
 - **Frontend**: HTML, CSS, JavaScript (served by Flask in the same container for simplicity)
 - **Backend**: Python Flask (with Gunicorn)
