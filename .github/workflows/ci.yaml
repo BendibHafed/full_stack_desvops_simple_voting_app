@@ -70,15 +70,15 @@ jobs:
         with:
           terraform_version: 1.13.0
 
-      # 8. Setup Terraform Plugin Cache (only if not ACT)
+      # 8. Setup Terraform Plugin Cache
       - name: Setup Terraform Plugin Cache
         working-directory: infra/terraform
         run: |
           mkdir -p ~/.terraform.d/plugin-cache
           echo 'plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
 
-      # 9. Terraform Init (Local State for CI)
-      - name: Terraform Init (Local State)
+      # 9. Terraform Init
+      - name: Terraform Init
         working-directory: infra/terraform
         run: |
           rm -rf .terraform .terraform.lock.hcl
@@ -100,7 +100,7 @@ jobs:
         working-directory: infra/terraform
         run: terraform validate -no-color
 
-      # 12. Terraform Plan (Local State / LocalStack)
+      # 12. Terraform Plan
       - name: Terraform Plan
         working-directory: infra/terraform
         env:
@@ -120,7 +120,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }} 
 
-      # 14. Login Github Container Registry (ghcr.io
+      # 14. Login Github Container Registry (ghcr.io)
       - name: Set lowercase repo slug
         run: echo "REPO_SLUG=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
