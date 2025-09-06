@@ -1,6 +1,6 @@
 # Key pair for SSH/Ansible
 resource "aws_key_pair" "voting_key" {
-  key_name   = "voting-app-key"
+  key_name   = "voting-key"
   public_key = var.ssh_public_key
 }
 
@@ -24,8 +24,15 @@ resource "aws_security_group" "voting_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  ingress {
+    description = "Allow PostgreSQL"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   egress {
-    description = "Outbound to All"
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -34,13 +41,36 @@ resource "aws_security_group" "voting_sg" {
 }
 
 # EC2 instance
-resource "aws_instance" "voting_app" {
-  ami             = data.aws_ami.ubuntu.id
-  instance_type   = "t3.micro"
-  key_name        = aws_key_pair.voting_key.key_name
-  security_groups = [aws_security_group.voting_sg.name]
+resource "aws_instance" "voting_ec2" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  key_name               = aws_key_pair.voting_key.key_name
+  vpc_security_group_ids = [aws_security_group.voting_sg.id]
+  subnet_id = data.aws_subnet.default.id
 
   tags = {
-    Name = "VotingAppInstance"
+    Name = "VotingAppEC2"
+  }
+  user_data = <<-EOF
+  #!/bin/bash
+  sudo apt update -y
+  sudo apt install -y python3 python3-pip
+  EOF
+}
+
+resource "aws_db_instance" "voting_db" {
+  identifier = "voting-db"
+  engine = "postgres"
+  instance_class = var.db_instance_class
+  allocated_storage = 8
+  db_name = var.db_name
+  username = var.db_username
+  password = var.db_password
+  skip_final_snapshot = true
+  publicly_accessible = true
+  vpc_security_group_ids = [aws_security_group.voting_sg.id]
+  monitoring_interval = 60
+  tags = {
+    Name = "VotingAppDB"
   }
 }

@@ -7,6 +7,7 @@ on:
 jobs:
   lint-test-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write
@@ -26,24 +27,24 @@ jobs:
           --health-retries=5
 
     steps:
-      # 1. checkout code
+      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. setup Python
+      # 2. Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # 3. install Python dependencies
+      # 3. Install Python dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
           pip install flake8
 
-      # 4. lint Python code
+      # 4. Lint Backend
       - name: Lint backend (flake8)
         run: |
           flake8 backend
@@ -51,20 +52,20 @@ jobs:
       # 5. Wait for Postgres to be ready
       - name: Wait for Postgres to be ready
         run: |
-            for i in {1..10}; do
-            pg_isready -h localhost -p 5432 && break
-            echo "Waiting for Postgres..."
-            sleep 2
-            done
+          for i in {1..10}; do
+            pg_isready -h localhost -U postgres -d voting && break
+            echo "Waiting for PostgreSQL..."
+            sleep 5
+          done
 
-      # 6. run tests
+      # 6. Run tests
       - name: Run tests
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/voting
+          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/voting
           FLASK_CONFIG: TestingConfig
         run: pytest -v
 
-      # 7. Terraform Setup
+      # 7. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -77,17 +78,12 @@ jobs:
           mkdir -p ~/.terraform.d/plugin-cache
           echo 'plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
 
-      # 9. Terraform Init
-      - name: Terraform Init
+      # 9. Terraform Init (CI-safe)
+      - name: Terraform Init (CI-safe)
         working-directory: infra/terraform
         run: |
-          rm -rf .terraform .terraform.lock.hcl
-          cat > backend_override.tf <<EOF
-          terraform {
-            backend "local" {}
-          }
-          EOF
-          terraform init -reconfigure -input=false -no-color
+          rm -rf .terraform
+          terraform init -backend=false -input=false -no-color
 
       # 10. Terraform Format Check
       - name: Terraform Format Check
@@ -100,36 +96,27 @@ jobs:
         working-directory: infra/terraform
         run: terraform validate -no-color
 
-      # 12. Terraform Plan
-      - name: Terraform Plan
-        working-directory: infra/terraform
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
-        run: |
-          terraform plan \
-            -input=false \
-            -no-color \
-            -lock=false
-
-      # 13. Login Github Container Registry (ghcr.io)
-      - name: Log in registry
+      # 12. Login Github Container Registry (ghcr.io)
+      - name: Log in to GitHub Container Registry GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }} 
 
-      # 14. Login Github Container Registry (ghcr.io)
+      # 13. Login Github Container Registry (ghcr.io)
       - name: Set lowercase repo slug
         run: echo "REPO_SLUG=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      # 15. build and push Docker image
+      # 14. build and push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./backend/Dockerfile
           push: true
-          tags: ghcr.io/${{ env.REPO_SLUG }}/voting-app:latest
+          tags: |
+            ghcr.io/${{ env.REPO_SLUG }}/voting-app:latest
+            ghcr.io/${{ env.REPO_SLUG }}/voting-app:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
