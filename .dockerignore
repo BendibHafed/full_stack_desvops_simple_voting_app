@@ -1,0 +1,30 @@
+# Ignore version control
+.git
+.gitignore
+
+# Ignore Terraform and Ansible configs
+infra/
+*.tf
+*.tfstate
+*.tfstate.backup
+
+# Ignore CI/CD files
+.github/
+*.yaml
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+
+# Ignore test files
+tests/
+*.log
+
+# Ignore frontend build artifacts (if any)
+frontend/node_modules/
+frontend/dist/
+
+*.tfvars
