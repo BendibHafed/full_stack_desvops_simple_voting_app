@@ -68,12 +68,16 @@ jobs:
       # 6. Terraform Plan
       - name: Terraform plan
         working-directory: infra/terraform
-        run: terraform plan -input=false -out=tfplan -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}"
+        run: terraform plan -input=false -out=tfplan
+        env:
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
       # 7. Terraform Apply
       - name: Terraform apply
         working-directory: infra/terraform
-        run: terraform apply -input=false -auto-approve -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" tfplan
+        run: terraform apply -input=false -auto-approve tfplan
+        env:
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
       # 8. Install Ansible and Plugins
       - name: Install Ansible + plugins
