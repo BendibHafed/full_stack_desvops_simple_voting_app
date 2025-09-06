@@ -46,7 +46,7 @@ resource "aws_instance" "voting_ec2" {
   instance_type          = var.instance_type
   key_name               = aws_key_pair.voting_key.key_name
   vpc_security_group_ids = [aws_security_group.voting_sg.id]
-  subnet_id = data.aws_subnet.default.id
+  subnet_id = data.aws_subnets.default.ids[0]
 
   tags = {
     Name = "VotingAppEC2"
