@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend and frontend into the image
 # (Flask app serves templates/static from ../frontend)
-COPY backend/ ./backend/
+COPY backend/ ./backend
 COPY frontend/ ./frontend/
 
 # Expose the app port (for documentation)

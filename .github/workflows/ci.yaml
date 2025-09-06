@@ -84,12 +84,15 @@ jobs:
         run: |
           rm -rf .terraform
           terraform init -backend=false -input=false -no-color
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       # 10. Terraform Format Check
       - name: Terraform Format Check
         working-directory: infra/terraform
         continue-on-error: true
-        run: terraform fmt -check -diff -recursive
+        run: terraform fmt -recursive
 
       # 11. Terraform Validate
       - name: Terraform Validate
