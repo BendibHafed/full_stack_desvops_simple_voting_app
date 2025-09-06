@@ -1,7 +1,7 @@
 # Key pair for SSH/Ansible
 resource "aws_key_pair" "voting_key" {
-    key_name = "voting-app-key"
-    public_key = file("~/.ssh/id_ed25519.pub")
+  key_name   = "voting-app-key"
+  public_key = var.ssh_public_key
 }
 
 # Security Group
