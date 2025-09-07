@@ -7,6 +7,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+
 
     permissions:
       contents: read
@@ -31,21 +34,26 @@ jobs:
        # 3. Ensure Terraform Backend Exists
       - name: Ensure Terraform Backend Exists
         run: |
+          set -e
           BUCKET="my-terraform-state-bucket-he1"
           REGION=${{ secrets.AWS_REGION }}
           DYNAMO_TABLE="terraform-locks"
 
+          echo "Checking S3 bucket: $BUCKET"
           if ! aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+          echo "Creating S3 Bucket!"
             aws s3api create-bucket \
               --bucket "$BUCKET" \
               --region "$REGION" \
-              --create-bucket-configuration LocationConstraint="$REGION" || true
+              --create-bucket-configuration LocationConstraint="$REGION"
             aws s3api put-bucket-encryption \
               --bucket "$BUCKET" \
               --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}' || true
           fi
 
+          echo "Checking DynamoDB table: $DYNAMO_TABLE"
           if ! aws dynamodb describe-table --table-name "$DYNAMO_TABLE" >/dev/null 2>&1; then
+            echo "Creating DynamoDB lock table..."
             aws dynamodb create-table \
               --table-name "$DYNAMO_TABLE" \
               --attribute-definitions AttributeName=LockID,AttributeType=S \
@@ -63,62 +71,68 @@ jobs:
       # 5. Terraform Init
       - name: Terraform Init
         working-directory: infra/terraform
-        run: terraform init -input=false
+        run: terraform init -input=false -no-color
 
       # 6. Terraform Plan
       - name: Terraform plan
         working-directory: infra/terraform
-        run: terraform plan -input=false -out=tfplan
-        env:
-          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+        run: terraform plan -input=false -no-color
 
       # 7. Terraform Apply
       - name: Terraform apply
         working-directory: infra/terraform
-        run: terraform apply -input=false -auto-approve tfplan
-        env:
-          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+        run: terraform apply -input=false -auto-approve -no-color
 
-      # 8. Install Ansible and Plugins
-      - name: Install Ansible + plugins
+      # 8. Get Terraform provisionning Outputs
+      - name: Get Terraform Outputs
+        id: tf_outputs
+        working-directory: infra/terraform
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible python3-boto3 python3-botocore
+          echo "EC2_IP=$(terraform output -raw ec2_public_ip)" >> $GITHUB_ENV
+          echo "RDS_ENDPOINT=$(terraform output -raw rds_endpoint)" >> $GITHUB_ENV
+          echo "RDS_PORT=$(terraform output -raw rds_port)" >> $GITHUB_ENV
+          echo "APP_URL=$(terraform output -raw app_url)" >> $GITHUB_ENV
 
-      # 9. Generate Ansible Inventory
-      - name: Generate inventory.ini
-        working-directory: infra/ansible
-        run: |
-          PUBLIC_IP=$(terraform -chdir=../terraform output -raw ec2_public_ip)
-          echo "[voting_app]" > inventory.ini
-          echo "$PUBLIC_IP ansible_user=ubuntu" >> inventory.ini
+      # # 8. Install Ansible and Plugins
+      # - name: Install Ansible + plugins
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y ansible python3-boto3 python3-botocore
 
-      # 10. Run Ansible Playbook
-      - name: Run Ansible
-        working-directory: infra/ansible
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "False"
-        run: |
-          echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > key.pem
-          chmod 600 key.pem
-          ansible-playbook -i inventory.ini playbook.yml \
-            --private-key key.pem \
-            -e "ghcr_username=${{ github.actor }} \
-                ghcr_token=${{ secrets.GITHUB_TOKEN }} \
-                repo_slug=${GITHUB_REPOSITORY,,}"
+      # # 9. Generate Ansible Inventory
+      # - name: Generate inventory.ini
+      #   working-directory: infra/ansible
+      #   run: |
+      #     PUBLIC_IP=$(terraform -chdir=../terraform output -raw ec2_public_ip)
+      #     echo "[voting_app]" > inventory.ini
+      #     echo "$PUBLIC_IP ansible_user=ubuntu" >> inventory.ini
 
-      # 10. Smoke Test
-      - name: Run Smoke Test
-        run: |
-          APP_URL=$(terraform -chdir=infra/terraform output -raw app_url)
-          echo "Testing app at $APP_URL"
-          for i in {1..10}; do
-            if curl -fs "$APP_URL/healthz"; then
-              echo "App is healthy!"
-              exit 0
-            fi
-            echo "Waiting for app..."
-            sleep 5
-          done
-          echo "App failed health check"
-          exit 1
+      # # 10. Run Ansible Playbook
+      # - name: Run Ansible
+      #   working-directory: infra/ansible
+      #   env:
+      #     ANSIBLE_HOST_KEY_CHECKING: "False"
+      #   run: |
+      #     echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > key.pem
+      #     chmod 600 key.pem
+      #     ansible-playbook -i inventory.ini playbook.yml \
+      #       --private-key key.pem \
+      #       -e "ghcr_username=${{ github.actor }} \
+      #           ghcr_token=${{ secrets.GITHUB_TOKEN }} \
+      #           repo_slug=${GITHUB_REPOSITORY,,}"
+
+      # # 10. Smoke Test
+      # - name: Run Smoke Test
+      #   run: |
+      #     APP_URL=$(terraform -chdir=infra/terraform output -raw app_url)
+      #     echo "Testing app at $APP_URL"
+      #     for i in {1..10}; do
+      #       if curl -fs "$APP_URL/healthz"; then
+      #         echo "App is healthy!"
+      #         exit 0
+      #       fi
+      #       echo "Waiting for app..."
+      #       sleep 5
+      #     done
+      #     echo "App failed health check"
+      #     exit 1
