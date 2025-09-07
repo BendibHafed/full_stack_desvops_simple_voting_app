@@ -70,7 +70,28 @@ resource "aws_db_instance" "voting_db" {
   publicly_accessible = true
   vpc_security_group_ids = [aws_security_group.voting_sg.id]
   monitoring_interval = 60
+  monitoring_role_arn = aws_iam_role.rds_monitoring_role.arn
   tags = {
     Name = "VotingAppDB"
   }
+}
+
+resource "aws_iam_role" "rds_monitoring_role" {
+  name = "rds-monitoring-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        Service = "monitoring.rds.amazonaws.com"
+      },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring_policy" {
+  role       = aws_iam_role.rds_monitoring_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
