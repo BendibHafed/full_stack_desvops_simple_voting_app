@@ -1,0 +1,29 @@
+- hosts: voting_app
+  become: yes
+  tasks:
+    - name: Install dependencies
+      apt:
+        name:
+          - docker.io
+          - python3-pip
+        state: present
+        update_cache: yes
+
+    - name: Install Docker SDK for Python
+      pip:
+        name: docker
+
+    - name: Log in to GHCR
+      community.docker.docker_login:
+        registry_url: ghcr.io
+        username: "{{ ghcr_username }}"
+        password: "{{ ghcr_token }}"
+
+    - name: Run Voting App container
+      community.docker.docker_container:
+        name: voting-app
+        image: "ghcr.io/{{ repo_slug }}/voting-app:latest"
+        state: started
+        restart_policy: always
+        ports:
+          - "80:5000"

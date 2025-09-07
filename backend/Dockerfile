@@ -8,12 +8,12 @@ WORKDIR /application
 
 # Install Python dependencies
 COPY backend/requirements.txt ./backend/requirements.txt
-RUN pip install --no-cache-dir -r backend/requirements.txt
+RUN pip install --no-cache-dir -r ./backend/requirements.txt
 
 # Copy backend and frontend into the image
 # (Flask app serves templates/static from ../frontend)
-COPY backend ./backend
-COPY frontend ./frontend
+COPY backend/ ./backend
+COPY frontend/ ./frontend/
 
 # Expose the app port (for documentation)
 EXPOSE 5000
