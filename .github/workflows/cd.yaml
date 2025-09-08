@@ -3,6 +3,12 @@ name: CD
 on: 
   push:
     branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "production"
 
 jobs:
   deploy:
@@ -96,46 +102,50 @@ jobs:
           echo "RDS_PORT=$(terraform output -raw rds_port)" >> $GITHUB_ENV
           echo "APP_URL=$(terraform output -raw app_url)" >> $GITHUB_ENV
 
-      # # 8. Install Ansible and Plugins
-      # - name: Install Ansible + plugins
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y ansible python3-boto3 python3-botocore
+      # 9. Install Ansible and Plugins
+      - name: Install Ansible + plugins
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible python3-boto3 python3-botocore
 
-      # # 9. Generate Ansible Inventory
-      # - name: Generate inventory.ini
-      #   working-directory: infra/ansible
-      #   run: |
-      #     PUBLIC_IP=$(terraform -chdir=../terraform output -raw ec2_public_ip)
-      #     echo "[voting_app]" > inventory.ini
-      #     echo "$PUBLIC_IP ansible_user=ubuntu" >> inventory.ini
+      # 10. Write Ansible private key
+      - name: Write Ansible inventory
+        working-directory: infra/ansible
+        run: |
+          echo "[voting]" > inventory.ini
+          echo "${{ env.EC2_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem">> inventory.ini
+          echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
+          chmod 600 ssh_private_key.pem
 
-      # # 10. Run Ansible Playbook
-      # - name: Run Ansible
-      #   working-directory: infra/ansible
-      #   env:
-      #     ANSIBLE_HOST_KEY_CHECKING: "False"
-      #   run: |
-      #     echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > key.pem
-      #     chmod 600 key.pem
-      #     ansible-playbook -i inventory.ini playbook.yml \
-      #       --private-key key.pem \
-      #       -e "ghcr_username=${{ github.actor }} \
-      #           ghcr_token=${{ secrets.GITHUB_TOKEN }} \
-      #           repo_slug=${GITHUB_REPOSITORY,,}"
+      # 11. Run Ansible Playbook
+      - name: Run Ansible
+        working-directory: infra/ansible
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+        run: |
+          repo_slug=${GITHUB_REPOSITORY,,}
+          ansible-playbook -i inventory.ini playbook.yaml \
+            --private-key ssh_private_key.pem \
+            --extra-vars "github_repo=${repo_slug} \
+                          db_user=${{ secrets.DB_USERNAME }} \
+                          db_pass=${{ secrets.DB_PASSWORD }} \
+                          db_name=${{ secrets.DB_NAME }} \
+                          rds_endpoint=${{ env.RDS_ENDPOINT }} \
+                          rds_port=${{ env.RDS_PORT }}"
 
-      # # 10. Smoke Test
-      # - name: Run Smoke Test
-      #   run: |
-      #     APP_URL=$(terraform -chdir=infra/terraform output -raw app_url)
-      #     echo "Testing app at $APP_URL"
-      #     for i in {1..10}; do
-      #       if curl -fs "$APP_URL/healthz"; then
-      #         echo "App is healthy!"
-      #         exit 0
-      #       fi
-      #       echo "Waiting for app..."
-      #       sleep 5
-      #     done
-      #     echo "App failed health check"
-      #     exit 1
+      # 12. Smoke Test
+      - name: Run Smoke Test
+        working-directory: infra/ansible
+        run: |
+          APP_URL=$(terraform output -raw app_url)
+          echo "Testing app at $APP_URL"
+          for i in {1..20}; do
+            if curl -fs "$APP_URL/healthz"; then
+              echo "App is healthy!"
+              exit 0
+            fi
+            echo "Waiting for app..."
+            sleep 5
+          done
+          echo "App failed health check"
+          exit 1
