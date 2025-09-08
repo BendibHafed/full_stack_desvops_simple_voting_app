@@ -112,7 +112,7 @@ jobs:
       - name: Write SSH Private Key
         working-directory: infra/ansible
         run: |
-          # Decode the base64 encoded private key
+          # Write raw PEM private key
           echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
           chmod 600 ssh_private_key.pem
 
@@ -122,7 +122,10 @@ jobs:
         run: |
           echo "[voting]" > inventory.ini
           echo "${{ env.EC2_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem">> inventory.ini
-
+      - name: Debug SSH Key Format
+        run: |
+          cat -v ssh_private_key.pem
+          file ssh_private_key.pem
       # 12. Test SSH Connection First
       - name: Test SSH Connection
         working-directory: infra/ansible
@@ -152,7 +155,7 @@ jobs:
                           rds_endpoint=${{ env.RDS_ENDPOINT }} \
                           rds_port=${{ env.RDS_PORT }}"
 
-      # 13. Smoke Test
+      # 14. Smoke Test
       - name: Run Smoke Test
         working-directory: infra/terraform
         run: |
