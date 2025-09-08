@@ -85,12 +85,12 @@ jobs:
       # 6. Terraform Plan
       - name: Terraform plan
         working-directory: infra/terraform
-        run: terraform plan -input=false -no-color
+        run: terraform plan -input=false -no-color -out=tfplan
 
       # 7. Terraform Apply
       - name: Terraform apply
         working-directory: infra/terraform
-        run: terraform apply -input=false -auto-approve -no-color
+        run: terraform apply -input=false -auto-approve -no-color -compact-warnings tfplan
 
       # 8. Get Terraform provisionning Outputs
       - name: Get Terraform Outputs
@@ -120,36 +120,37 @@ jobs:
       # 11. Write SSH Private Key
       - name: Write SSH Private Key
         run: |
-          echo -e "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
-          chmod 600 ssh_private_key.pem
+          mkdir -p infra/ansible
+          echo -e "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > infra/ansible/ssh_private_key.pem
+          chmod 600 infra/ansible/ssh_private_key.pem
 
       # 12. Normalize Line Endings
       - name: Normalize Line Endings
+        working-directory: infra/ansible
         run: |
           sed -i 's/\r$//' ssh_private_key.pem
       - name: Validate SSH Key Format
+        working-directory: infra/ansible
         run: |
           file ssh_private_key.pem
           ssh-keygen -lf ssh_private_key.pem
 
       # 13. Write Ansible inventory
       - name: Write Ansible Inventory
+        working-directory: infra/ansible
         run: |
           echo "[voting]" > inventory.ini
           echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem" >> inventory.ini
 
-      # 14. Debug SSH key Format
-      - name: Debug SSH Key Format
-        run: |
-          cat -v ssh_private_key.pem
-          file ssh_private_key.pem
 
-      # 15. Print Fingerprint for SSH key
+      # 14. Print Fingerprint for SSH key
       - name: Print SSH Key Fingerprint
+        working-directory: infra/ansible
         run: ssh-keygen -lf ssh_private_key.pem
 
-      # 16. Test SSH Connection First
+      # 15. Test SSH Connection First
       - name: Test SSH Connection
+        working-directory: infra/ansible
         run: |
           echo "Testing connection to ${{ env.EC2_IP }}..."
           ssh -i ssh_private_key.pem \
@@ -166,8 +167,8 @@ jobs:
           ANSIBLE_HOST_KEY_CHECKING: "False"
         run: |
           repo_slug=${GITHUB_REPOSITORY,,}
-          ansible-playbook -i ../../inventory.ini playbook.yaml \
-            --private-key ../../ssh_private_key.pem \
+          ansible-playbook -i inventory.ini playbook.yaml \
+            --private-key ssh_private_key.pem \
             --extra-vars "github_repo=${repo_slug} \
                           db_user=${{ secrets.DB_USERNAME }} \
                           db_pass=${{ secrets.DB_PASSWORD }} \
