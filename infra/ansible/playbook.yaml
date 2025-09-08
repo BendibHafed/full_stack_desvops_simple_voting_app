@@ -1,11 +1,17 @@
-- hosts: voting_app
-  become: yes
+- name: Deploy Voting App
+  hosts: voting
+  become: true
+
+  vars:
+    docker_image: "ghcr.io/{{ github_repo }}/voting-app:latest"
+    db_url: "postgresql+psycopg2://{{ db_user }}:{{ db_pass }}@{{ rds_endpoint }}:{{ rds_port }}/{{ db_name }}"
+
   tasks:
-    - name: Install dependencies
+    - name: Install Docker
       apt:
         name:
-          - docker.io
           - python3-pip
+          - docker.io
         state: present
         update_cache: yes
 
@@ -13,17 +19,32 @@
       pip:
         name: docker
 
-    - name: Log in to GHCR
-      community.docker.docker_login:
-        registry_url: ghcr.io
-        username: "{{ ghcr_username }}"
-        password: "{{ ghcr_token }}"
-
-    - name: Run Voting App container
-      community.docker.docker_container:
-        name: voting-app
-        image: "ghcr.io/{{ repo_slug }}/voting-app:latest"
-        state: started
-        restart_policy: always
-        ports:
-          - "80:5000"
+    - name: install Docker Compose
+      apt:
+        name: docker-compose
+        state: present
+    
+    - name: Create app directory
+      file:
+        path: /home/ubuntu/voting-app
+        state: directory
+        owner: ubuntu
+        mode: '0755'
+    
+    - name: Generate docker-compose.yaml
+      copy:
+        dest: /home/ubuntu/voting-app/docker-compose.yaml
+        content: |
+          version: '3'
+          services:
+            voting-app:
+              image: {{ docker_image }}
+              ports:
+                - "80:5000"
+              environment:
+                DATABASE_URL: "{{ db_url }}"
+    
+    - name: Run Docker Compose
+      command: docker compose up -d
+      args:
+        chdir: /home/ubuntu/voting-app
