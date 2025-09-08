@@ -112,12 +112,17 @@ jobs:
       - name: Write Ansible inventory
         working-directory: infra/ansible
         run: |
-          echo "[voting]" > inventory.ini
-          echo "${{ env.EC2_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem">> inventory.ini
           echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" | base64 -d > ssh_private_key.pem
           chmod 600 ssh_private_key.pem
 
-      # 11. Run Ansible Playbook
+      # 11 Write Ansible inventory
+      - name: Write Ansible inventory
+        working-directory: infra/ansible
+        run: |
+          echo "[voting]" > inventory.ini
+          echo "${{ env.EC2_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem">> inventory.ini
+
+      # 12. Run Ansible Playbook
       - name: Run Ansible
         working-directory: infra/ansible
         env:
@@ -133,7 +138,7 @@ jobs:
                           rds_endpoint=${{ env.RDS_ENDPOINT }} \
                           rds_port=${{ env.RDS_PORT }}"
 
-      # 12. Smoke Test
+      # 13. Smoke Test
       - name: Run Smoke Test
         working-directory: infra/ansible
         run: |
