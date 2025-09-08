@@ -61,7 +61,7 @@
         chdir: /home/ubuntu/voting-app
     
     - name: Get container ID of voting app
-      command: docker ps --filter "ancestor=ghcr.io/bendibhafed/full_stack_desvops_simple_voting_app/voting-app:latest" --format "{{.Names}}"
+      command: docker ps --filter "ancestor=ghcr.io/{{ github_repo }}/voting-app:latest" --format "{{'{{.Names}}'}}"
       register: container_name
 
     - name: Seed the database
