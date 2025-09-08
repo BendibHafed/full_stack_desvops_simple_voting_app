@@ -111,7 +111,7 @@ jobs:
       # 10. Write SSH Private Key
       - name: Write SSH Private Key
         run: |
-          echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
+          printf "%s\n" "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
           chmod 600 ssh_private_key.pem
 
       # 11 Write Ansible inventory
