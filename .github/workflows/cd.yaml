@@ -120,14 +120,20 @@ jobs:
       # 11. Write SSH Private Key
       - name: Write SSH Private Key
         run: |
-          printf "%s" "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
+          cat <<EOF > ssh_private_key.pem
+          ${{ secrets.ANSIBLE_PRIVATE_KEY }}
+          EOF
           chmod 600 ssh_private_key.pem
 
       # 12. Normalize Line Endings
       - name: Normalize Line Endings
         run: |
           sed -i 's/\r$//' ssh_private_key.pem
-
+      - name: Validate SSH Key Format
+        run: |
+          file ssh_private_key.pem
+          ssh-keygen -lf ssh_private_key.pem
+          
       # 13. Write Ansible inventory
       - name: Write Ansible Inventory
         run: |
