@@ -110,27 +110,23 @@ jobs:
 
       # 10. Write SSH Private Key
       - name: Write SSH Private Key
-        working-directory: infra/ansible
         run: |
-          # Write raw PEM private key
           echo "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
           chmod 600 ssh_private_key.pem
 
       # 11 Write Ansible inventory
-      - name: Write Ansible inventory
-        working-directory: infra/ansible
+      - name: Write Ansible Inventory
         run: |
           echo "[voting]" > inventory.ini
-          echo "${{ env.EC2_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem">> inventory.ini
+          echo "${{ env.EC2_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem" >> inventory.ini
+     
       - name: Debug SSH Key Format
-        working-directory: infra/ansible
         run: |
           cat -v ssh_private_key.pem
           file ssh_private_key.pem
 
       # 12. Test SSH Connection First
       - name: Test SSH Connection
-        working-directory: infra/ansible
         run: |
           echo "Testing connection to ${{ env.EC2_IP }}..."
           ssh -i ssh_private_key.pem \
@@ -139,11 +135,9 @@ jobs:
               -o BatchMode=yes \
               ubuntu@${{ env.EC2_IP }} \
               "echo ' SSH connection successful'"
-          echo "SSH test passed!"
 
       # 13. Run Ansible Playbook
       - name: Run Ansible
-        working-directory: infra/ansible
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
         run: |
