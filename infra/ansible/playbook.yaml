@@ -2,27 +2,31 @@
   hosts: voting
   become: true
 
+  pre_tasks:
+    - name: Ensure Python is installed (for Ansible facts)
+      raw: |
+        if ! command -v python3 >/dev/null 2>&1; then
+          sudo apt-get update -y && sudo apt-get install -y python3
+        fi
+      changed_when: false
+
   vars:
     docker_image: "ghcr.io/{{ github_repo }}/voting-app:latest"
     db_url: "postgresql+psycopg2://{{ db_user }}:{{ db_pass }}@{{ rds_endpoint }}:{{ rds_port }}/{{ db_name }}"
 
   tasks:
-    - name: Install Docker
+    - name: Install Docker + Docker Compose + Deps.
       apt:
         name:
           - python3-pip
           - docker.io
+          - docker-compose
         state: present
         update_cache: yes
 
     - name: Install Docker SDK for Python
       pip:
         name: docker
-
-    - name: install Docker Compose
-      apt:
-        name: docker-compose
-        state: present
     
     - name: Create app directory
       file:
