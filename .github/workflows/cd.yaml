@@ -90,7 +90,7 @@ jobs:
       # 7. Terraform Apply
       - name: Terraform apply
         working-directory: infra/terraform
-        run: terraform apply -input=false -auto-approve -no-color -compact-warnings tfplan
+        run: terraform apply -input=false -auto-approve -no-color tfplan
 
       # 8. Get Terraform provisionning Outputs
       - name: Get Terraform Outputs
