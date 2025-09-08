@@ -46,7 +46,7 @@ resource "aws_instance" "voting_ec2" {
   instance_type          = var.instance_type
   key_name               = aws_key_pair.voting_key.key_name
   vpc_security_group_ids = [aws_security_group.voting_sg.id]
-  subnet_id = data.aws_subnets.default.ids[0]
+  subnet_id              = data.aws_subnets.default.ids[0]
 
   tags = {
     Name = "VotingAppEC2"
@@ -59,18 +59,18 @@ resource "aws_instance" "voting_ec2" {
 }
 
 resource "aws_db_instance" "voting_db" {
-  identifier = "voting-db"
-  engine = "postgres"
-  instance_class = var.db_instance_class
-  allocated_storage = 8
-  db_name = var.db_name
-  username = var.db_username
-  password = var.db_password
-  skip_final_snapshot = true
-  publicly_accessible = true
+  identifier             = "voting-db"
+  engine                 = "postgres"
+  instance_class         = var.db_instance_class
+  allocated_storage      = 8
+  db_name                = var.db_name
+  username               = var.db_username
+  password               = var.db_password
+  skip_final_snapshot    = true
+  publicly_accessible    = true
   vpc_security_group_ids = [aws_security_group.voting_sg.id]
-  monitoring_interval = 60
-  monitoring_role_arn = aws_iam_role.rds_monitoring_role.arn
+  monitoring_interval    = 60
+  monitoring_role_arn    = aws_iam_role.rds_monitoring_role.arn
   tags = {
     Name = "VotingAppDB"
   }
