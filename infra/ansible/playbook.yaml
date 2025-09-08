@@ -57,7 +57,7 @@
     
     - name: Run Docker Compose
       ansible.builtin.command:
-        cmd: docker-compose up -d
+        cmd: sudo docker-compose up -d
         chdir: /home/ubuntu/voting-app
 
   handlers:
