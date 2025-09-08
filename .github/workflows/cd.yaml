@@ -161,6 +161,7 @@ jobs:
 
       # 17. Run Ansible Playbook
       - name: Run Ansible
+        working-directory: infra/ansible  
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
         run: |
