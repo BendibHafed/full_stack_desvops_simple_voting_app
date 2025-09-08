@@ -133,7 +133,7 @@ jobs:
         run: |
           file ssh_private_key.pem
           ssh-keygen -lf ssh_private_key.pem
-          
+
       # 13. Write Ansible inventory
       - name: Write Ansible Inventory
         run: |
@@ -167,7 +167,7 @@ jobs:
           ANSIBLE_HOST_KEY_CHECKING: "False"
         run: |
           repo_slug=${GITHUB_REPOSITORY,,}
-          ansible-playbook -i inventory.ini playbook.yaml \
+          ansible-playbook -i inventory.ini playbook.yaml --ask-pass\
             --private-key ssh_private_key.pem \
             --extra-vars "github_repo=${repo_slug} \
                           db_user=${{ secrets.DB_USERNAME }} \
