@@ -27,14 +27,26 @@
     - name: Install Docker SDK for Python
       pip:
         name: docker
-    
+    - name: Install Docker Compose plugin
+      get_url:
+        url: https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+  
     - name: Create app directory
       file:
         path: /home/ubuntu/voting-app
         state: directory
         owner: ubuntu
         mode: '0755'
-    
+
+    - name: Create log directory
+      file:
+        path: /home/ubuntu/voting-app/logs
+        state: directory
+        owner: ubuntu
+        mode: '0755'
+
     - name: Generate docker-compose.yaml
       copy:
         dest: /home/ubuntu/voting-app/docker-compose.yaml
@@ -49,6 +61,12 @@
                 DATABASE_URL: "{{ db_url }}"
     
     - name: Run Docker Compose
-      command: docker compose up -d
-      args:
+      ansible.builtin.command:
+        cmd: docker compose up -d
         chdir: /home/ubuntu/voting-app
+
+  handlers:
+  - name: Restart Docker
+    service:
+      name: docker
+      state: restarted
