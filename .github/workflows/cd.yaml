@@ -108,26 +108,43 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ansible python3-boto3 python3-botocore
 
-      # 10. Write SSH Private Key
+      # 10. Wait for EC2 instance to be ready
+      - name: Wait for EC2 to be ready
+        run: |
+          for i in {1..20}; do
+            nc -zv ${{ env.EC2_IP }} 22 && break
+            echo "Waiting for SSH port..."
+            sleep 5
+          done
+
+      # 11. Write SSH Private Key
       - name: Write SSH Private Key
         run: |
           printf "%s\n" "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
           chmod 600 ssh_private_key.pem
 
-      # 11 Write Ansible inventory
+      # 12. Normalize Line Endings
+      - name: Normalize Line Endings
+        run: |
+          sed -i 's/\r$//' ssh_private_key.pem
+
+      # 13. Write Ansible inventory
       - name: Write Ansible Inventory
         run: |
           echo "[voting]" > inventory.ini
           echo "${{ env.EC2_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem" >> inventory.ini
-     
+
+      # 14. Debug SSH key Format
       - name: Debug SSH Key Format
         run: |
           cat -v ssh_private_key.pem
           file ssh_private_key.pem
+
+      # 15. Print Fingerprint for SSH key
       - name: Print SSH Key Fingerprint
         run: ssh-keygen -lf ssh_private_key.pem
-        
-      # 12. Test SSH Connection First
+
+      # 16. Test SSH Connection First
       - name: Test SSH Connection
         run: |
           echo "Testing connection to ${{ env.EC2_IP }}..."
@@ -138,7 +155,7 @@ jobs:
               ubuntu@${{ env.EC2_IP }} \
               "echo ' SSH connection successful'"
 
-      # 13. Run Ansible Playbook
+      # 17. Run Ansible Playbook
       - name: Run Ansible
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
@@ -153,7 +170,7 @@ jobs:
                           rds_endpoint=${{ env.RDS_ENDPOINT }} \
                           rds_port=${{ env.RDS_PORT }}"
 
-      # 14. Smoke Test
+      # 18. Smoke Test
       - name: Run Smoke Test
         working-directory: infra/terraform
         run: |
