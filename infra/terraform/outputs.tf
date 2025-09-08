@@ -7,7 +7,7 @@ output "ec2_public_ip" {
 # RDS endpoint
 output "rds_endpoint" {
   description = "RDS PostgreSQL endpoint"
-  value       = aws_db_instance.voting_db.endpoint
+  value       = aws_db_instance.voting_db.address
 }
 
 # RDS port
