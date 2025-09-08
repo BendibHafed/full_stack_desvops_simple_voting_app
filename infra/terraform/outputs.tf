@@ -16,14 +16,11 @@ output "rds_port" {
   value       = aws_db_instance.voting_db.port
 }
 
-# Application URL
-output "app_url" {
-  description = "URL to access the Voting App"
-  value       = "http://${aws_instance.voting_ec2.public_ip}"
-}
-
-# Public DNS of the EC2 instance
 output "ec2_public_dns" {
   description = "Public DNS of EC2"
   value       = aws_instance.voting_ec2.public_dns
+}
+
+output "app_url" {
+  value = "http://${aws_lb.app_alb.dns_name}"
 }
