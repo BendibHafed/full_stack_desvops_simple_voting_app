@@ -124,7 +124,9 @@ jobs:
         run: |
           cat -v ssh_private_key.pem
           file ssh_private_key.pem
-
+      - name: Print SSH Key Fingerprint
+        run: ssh-keygen -lf ssh_private_key.pem
+        
       # 12. Test SSH Connection First
       - name: Test SSH Connection
         run: |
