@@ -65,7 +65,7 @@
       register: container_name
 
     - name: Seed the database
-      command: docker exec {{ container_name.stdout }} python backend.seed
+      command: docker exec {{ container_name.stdout }} python -m backend.seed
 
   handlers:
   - name: Restart Docker
