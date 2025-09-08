@@ -123,9 +123,11 @@ jobs:
           echo "[voting]" > inventory.ini
           echo "${{ env.EC2_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem">> inventory.ini
       - name: Debug SSH Key Format
+        working-directory: infra/ansible
         run: |
           cat -v ssh_private_key.pem
           file ssh_private_key.pem
+
       # 12. Test SSH Connection First
       - name: Test SSH Connection
         working-directory: infra/ansible
