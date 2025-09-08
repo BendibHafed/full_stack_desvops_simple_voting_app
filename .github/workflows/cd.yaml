@@ -120,7 +120,7 @@ jobs:
       # 11. Write SSH Private Key
       - name: Write SSH Private Key
         run: |
-          printf "%s\n" "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
+          printf "%s" "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
           chmod 600 ssh_private_key.pem
 
       # 12. Normalize Line Endings
