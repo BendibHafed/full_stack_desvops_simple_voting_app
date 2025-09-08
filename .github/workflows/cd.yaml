@@ -166,7 +166,7 @@ jobs:
           ANSIBLE_HOST_KEY_CHECKING: "False"
         run: |
           repo_slug=${GITHUB_REPOSITORY,,}
-          ansible-playbook -i inventory.ini playbook.yaml --ask-pass\
+          ansible-playbook -i inventory.ini playbook.yaml \
             --private-key ssh_private_key.pem \
             --extra-vars "github_repo=${repo_slug} \
                           db_user=${{ secrets.DB_USERNAME }} \
