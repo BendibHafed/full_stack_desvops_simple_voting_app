@@ -1,6 +1,7 @@
-# Voting App (DevOps Demo)
+# Voting App (DevOps Demonstration)
 
 [![CI](https://github.com/BendibHafed/full_stack_desvops_simple_voting_app/actions/workflows/ci.yaml/badge.svg)](https://github.com/BendibHafed/full_stack_desvops_simple_voting_app/actions/workflows/ci.yaml)
+[![CD](https://github.com/BendibHafed/full_stack_desvops_simple_voting_app/actions/workflows/cd.yaml/badge.svg)](https://github.com/BendibHafed/full_stack_desvops_simple_voting_app/actions/workflows/cd.yaml)
 ![License](https://img.shields.io/github/license/BendibHafed/full_stack_desvops_simple_voting_app)
 ![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fbendibhafed%2Fvoting--app-blue?logo=docker)
 
