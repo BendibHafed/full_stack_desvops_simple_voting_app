@@ -120,10 +120,8 @@ jobs:
       # 11. Write SSH Private Key
       - name: Write SSH Private Key
         run: |
-            cat <<EOF > ssh_private_key.pem 
-            ${{ secrets.ANSIBLE_PRIVATE_KEY }} 
-            EOF
-            chmod 600 ssh_private_key.pem
+          echo -e "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > ssh_private_key.pem
+          chmod 600 ssh_private_key.pem
 
       # 12. Normalize Line Endings
       - name: Normalize Line Endings
