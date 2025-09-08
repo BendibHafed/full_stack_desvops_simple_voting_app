@@ -27,11 +27,6 @@
     - name: Install Docker SDK for Python
       pip:
         name: docker
-    - name: Install Docker Compose plugin
-      get_url:
-        url: https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64
-        dest: /usr/local/bin/docker-compose
-        mode: '0755'
   
     - name: Create app directory
       file:
@@ -62,7 +57,7 @@
     
     - name: Run Docker Compose
       ansible.builtin.command:
-        cmd: docker compose up -d
+        cmd: docker-compose up -d
         chdir: /home/ubuntu/voting-app
 
   handlers:
