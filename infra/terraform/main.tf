@@ -17,21 +17,7 @@ resource "aws_security_group" "voting_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  ingress {
-    description = "Allow HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    description = "Allow PostgreSQL"
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
+  
   ingress {
     from_port       = 5000
     to_port         = 5000
@@ -59,11 +45,31 @@ resource "aws_instance" "voting_ec2" {
   tags = {
     Name = "VotingAppEC2"
   }
-  user_data = <<-EOF
-  #!/bin/bash
-  sudo apt update -y
-  sudo apt install -y python3 python3-pip
-  EOF
+}
+
+resource "aws_security_group" "rds_sg" {
+  name        = "voting-rds-sg"
+  description = "Allow PostgreSQL access from EC2 instances"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    description     = "PostgreSQL from EC2"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.voting_sg.id] # EC2 SG
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "VotingRDS-SG"
+  }
 }
 
 resource "aws_db_instance" "voting_db" {
@@ -76,7 +82,7 @@ resource "aws_db_instance" "voting_db" {
   password               = var.db_password
   skip_final_snapshot    = true
   publicly_accessible    = true
-  vpc_security_group_ids = [aws_security_group.voting_sg.id]
+  vpc_security_group_ids = [aws_security_group.rds_sg.id]
   monitoring_interval    = 60
   monitoring_role_arn    = aws_iam_role.rds_monitoring_role.arn
   tags = {
@@ -111,8 +117,8 @@ resource "aws_security_group" "alb_sg" {
 
   ingress {
     description = "Allow HTTP"
-    from_port = 80
-    to_port = 80
+    from_port = 5000
+    to_port = 5000
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -125,7 +131,7 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-resource "aws_lb" "app_alb" {
+resource "aws_lb" "voting_alb" {
   name               = "voting-app-alb"
   internal           = false
   load_balancer_type = "application"
@@ -135,13 +141,13 @@ resource "aws_lb" "app_alb" {
 
 resource "aws_lb_target_group" "app_tg" {
   name     = "voting-app-tg"
-  port     = 80
+  port     = 5000
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
 
   health_check {
     path                = "/healthz"
-    port                = 80
+    port                = 5000
     protocol            = "HTTP"
     matcher             = "200"
     interval            = 30
@@ -152,7 +158,7 @@ resource "aws_lb_target_group" "app_tg" {
 }
 
 resource "aws_lb_listener" "app_listener" {
-  load_balancer_arn = aws_lb.app_alb.arn
+  load_balancer_arn = aws_lb.voting_alb.arn
   port              = 80
   protocol          = "HTTP"
 
@@ -165,5 +171,5 @@ resource "aws_lb_listener" "app_listener" {
 resource "aws_lb_target_group_attachment" "app_attachment" {
   target_group_arn = aws_lb_target_group.app_tg.arn
   target_id        = aws_instance.voting_ec2.id
-  port             = 80
+  port             = 5000
 }
