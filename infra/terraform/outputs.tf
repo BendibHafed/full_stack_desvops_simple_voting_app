@@ -22,5 +22,5 @@ output "ec2_public_dns" {
 }
 
 output "app_url" {
-  value = "http://${aws_lb.app_alb.dns_name}"
+  value = "http://${aws_lb.voting_alb.dns_name}"
 }

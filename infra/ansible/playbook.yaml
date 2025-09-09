@@ -15,7 +15,7 @@
     db_url: "postgresql+psycopg2://{{ db_user }}:{{ db_pass }}@{{ rds_endpoint }}:{{ rds_port }}/{{ db_name }}"
 
   tasks:
-    - name: Install Docker + Docker Compose + Deps.
+    - name: Install Docker + Docker Compose + Dependencies
       apt:
         name:
           - python3-pip
@@ -42,16 +42,18 @@
         owner: ubuntu
         mode: '0755'
 
-    - name: Generate docker-compose.yaml
+    - name: Generate docker-compose.yaml securely
       copy:
         dest: /home/ubuntu/voting-app/docker-compose.yaml
+        owner: ubuntu
+        mode: '0640'
         content: |
           version: '3'
           services:
             voting-app:
               image: {{ docker_image }}
               ports:
-                - "80:5000"
+                - "5000:5000"
               environment:
                 DATABASE_URL: "{{ db_url }}"
     
@@ -63,9 +65,12 @@
     - name: Get container ID of voting app
       command: docker ps --filter "ancestor=ghcr.io/{{ github_repo }}/voting-app:latest" --format "{{'{{.Names}}'}}"
       register: container_name
+      no_log: true  # Prevents logging container name if sensitive
 
     - name: Seed the database
       command: docker exec {{ container_name.stdout }} python -m backend.seed
+      when: seed_db | default(false)
+      no_log: true  # Prevents logging DB seed output
 
   handlers:
   - name: Restart Docker
