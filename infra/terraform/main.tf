@@ -98,7 +98,7 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-resource "aws_lb" "app_alb" {
+resource "aws_lb" "voting_alb" {
   name               = "voting-app-alb"
   internal           = false
   load_balancer_type = "application"
@@ -125,7 +125,7 @@ resource "aws_lb_target_group" "app_tg" {
 }
 
 resource "aws_lb_listener" "app_listener" {
-  load_balancer_arn = aws_lb.app_alb.arn
+  load_balancer_arn = aws_lb.voting_alb.arn
   port              = 80
   protocol          = "HTTP"
 
