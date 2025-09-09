@@ -131,12 +131,6 @@ resource "aws_lb" "app_alb" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = data.aws_subnets.default.ids
-
-  enable_deletion_protection = true
-
-  tags = {
-    Environment = "production"
-  }
 }
 
 resource "aws_lb_target_group" "app_tg" {
@@ -147,7 +141,7 @@ resource "aws_lb_target_group" "app_tg" {
 
   health_check {
     path                = "/healthz"
-    port                = "80"
+    port                = 80
     protocol            = "HTTP"
     matcher             = "200"
     interval            = 30
@@ -159,7 +153,7 @@ resource "aws_lb_target_group" "app_tg" {
 
 resource "aws_lb_listener" "app_listener" {
   load_balancer_arn = aws_lb.app_alb.arn
-  port              = "80"
+  port              = 80
   protocol          = "HTTP"
 
   default_action {
@@ -171,5 +165,5 @@ resource "aws_lb_listener" "app_listener" {
 resource "aws_lb_target_group_attachment" "app_attachment" {
   target_group_arn = aws_lb_target_group.app_tg.arn
   target_id        = aws_instance.voting_ec2.id
-  port             = 5000
+  port             = 80
 }
