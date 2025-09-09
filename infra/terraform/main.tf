@@ -17,6 +17,14 @@ resource "aws_security_group" "voting_sg" {
     security_groups = [aws_security_group.alb_sg.id]
   }
 
+  ingress {
+    description = "Allow SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     description = "Allow all outbound traffic"
     from_port   = 0
@@ -39,6 +47,31 @@ resource "aws_instance" "voting_ec2" {
   }
 }
 
+resource "aws_security_group" "rds_sg" {
+  name        = "voting-rds-sg"
+  description = "Allow PostgreSQL access from EC2 instances"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    description     = "PostgreSQL from EC2"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.voting_sg.id] # EC2 SG
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "VotingRDS-SG"
+  }
+}
+
 resource "aws_db_instance" "voting_db" {
   identifier             = "voting-db"
   engine                 = "postgres"
@@ -49,7 +82,7 @@ resource "aws_db_instance" "voting_db" {
   password               = var.db_password
   skip_final_snapshot    = true
   publicly_accessible    = true
-  vpc_security_group_ids = [aws_security_group.voting_sg.id]
+  vpc_security_group_ids = [aws_security_group.rds_sg]
   monitoring_interval    = 60
   monitoring_role_arn    = aws_iam_role.rds_monitoring_role.arn
   tags = {
@@ -78,22 +111,22 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring_policy" {
 }
 
 resource "aws_security_group" "alb_sg" {
-  name = "voting-app-alb-sg"
+  name        = "voting-app-alb-sg"
   description = "Allow HTTP traffic to ALB"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
     description = "Allow HTTP"
-    from_port = 5000
-    to_port = 5000
-    protocol = "tcp"
+    from_port   = 5000
+    to_port     = 5000
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
