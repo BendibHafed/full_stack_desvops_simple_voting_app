@@ -17,12 +17,12 @@ resource "aws_security_group" "voting_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   ingress {
     from_port       = 5000
     to_port         = 5000
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id]
+    security_groups = [aws_security_group.alb_sg.id] # only from ALB
   }
 
   egress {
@@ -57,7 +57,7 @@ resource "aws_security_group" "rds_sg" {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.voting_sg.id] # EC2 SG
+    security_groups = [aws_security_group.voting_sg.id] # only from EC2 SG
   }
 
   egress {
@@ -111,22 +111,22 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring_policy" {
 }
 
 resource "aws_security_group" "alb_sg" {
-  name = "voting-app-alb-sg"
+  name        = "voting-app-alb-sg"
   description = "Allow HTTP traffic to ALB"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
     description = "Allow HTTP"
-    from_port = 5000
-    to_port = 5000
-    protocol = "tcp"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
