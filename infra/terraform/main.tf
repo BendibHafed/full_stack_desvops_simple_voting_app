@@ -4,28 +4,6 @@ resource "aws_key_pair" "voting_key" {
   public_key = var.ssh_public_key
 }
 
-# Security Group
-resource "aws_security_group" "voting_sg" {
-  name        = "voting-app-sg"
-  description = "Allow SSH and HTTP traffic"
-  vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    from_port       = 5000
-    to_port         = 5000
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id]
-  }
-
-  egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 # EC2 instance
 resource "aws_instance" "voting_ec2" {
   ami                    = data.aws_ami.ubuntu.id
@@ -49,7 +27,7 @@ resource "aws_db_instance" "voting_db" {
   password               = var.db_password
   skip_final_snapshot    = true
   publicly_accessible    = true
-  vpc_security_group_ids = [aws_security_group.voting_sg.id]
+  vpc_security_group_ids = [aws_security_group.rds_sg.id]
   monitoring_interval    = 60
   monitoring_role_arn    = aws_iam_role.rds_monitoring_role.arn
   tags = {
@@ -104,9 +82,26 @@ resource "aws_lb" "voting_alb" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = data.aws_subnets.default.ids
+
+  tags = {
+    Name        = "VotingAppALB"
+    Environment = "Production"
+  }
+
 }
 
-resource "aws_lb_target_group" "app_tg" {
+resource "aws_lb_listener" "http_listener" {
+  load_balancer_arn = aws_lb.voting_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.voting_tg.arn
+  }
+}
+
+resource "aws_lb_target_group" "voting_tg" {
   name     = "voting-app-tg"
   port     = 5000
   protocol = "HTTP"
@@ -135,8 +130,47 @@ resource "aws_lb_listener" "app_listener" {
   }
 }
 
+
+  launch_template {
+    id      = aws_launch_template.voting_lt.id
+    version = "$Latest"
+  }
+
+  target_group_arns         = [aws_lb_target_group.voting_tg.arn]
+  health_check_type         = "EC2"
+  health_check_grace_period = 300
+
+  tag {
+    key                 = "Name"
+    value               = "voting-app-instance"
+    propagate_at_launch = true
+  }
+}
+
 resource "aws_lb_target_group_attachment" "app_attachment" {
   target_group_arn = aws_lb_target_group.app_tg.arn
   target_id        = aws_instance.voting_ec2.id
   port             = 5000
 }
+  
+resource "aws_security_group" "voting_sg" {
+  name        = "voting-app-sg"
+  description = "Allow SSH and HTTP traffic"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port       = 5000
+    to_port         = 5000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
