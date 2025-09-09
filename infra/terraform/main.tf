@@ -11,28 +11,6 @@ resource "aws_security_group" "voting_sg" {
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
-    description = "Allow SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    description = "Allow HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    description = "Allow PostgreSQL"
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
     from_port       = 5000
     to_port         = 5000
     protocol        = "tcp"
@@ -59,11 +37,6 @@ resource "aws_instance" "voting_ec2" {
   tags = {
     Name = "VotingAppEC2"
   }
-  user_data = <<-EOF
-  #!/bin/bash
-  sudo apt update -y
-  sudo apt install -y python3 python3-pip
-  EOF
 }
 
 resource "aws_db_instance" "voting_db" {
@@ -111,8 +84,8 @@ resource "aws_security_group" "alb_sg" {
 
   ingress {
     description = "Allow HTTP"
-    from_port = 80
-    to_port = 80
+    from_port = 5000
+    to_port = 5000
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -135,13 +108,13 @@ resource "aws_lb" "app_alb" {
 
 resource "aws_lb_target_group" "app_tg" {
   name     = "voting-app-tg"
-  port     = 80
+  port     = 5000
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
 
   health_check {
     path                = "/healthz"
-    port                = 80
+    port                = 5000
     protocol            = "HTTP"
     matcher             = "200"
     interval            = 30
@@ -165,5 +138,5 @@ resource "aws_lb_listener" "app_listener" {
 resource "aws_lb_target_group_attachment" "app_attachment" {
   target_group_arn = aws_lb_target_group.app_tg.arn
   target_id        = aws_instance.voting_ec2.id
-  port             = 80
+  port             = 5000
 }
