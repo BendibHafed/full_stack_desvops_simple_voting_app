@@ -147,7 +147,6 @@ resource "aws_lb_target_group" "app_tg" {
 
   health_check {
     path                = "/healthz"
-    port                = 5000
     protocol            = "HTTP"
     matcher             = "200"
     interval            = 30
