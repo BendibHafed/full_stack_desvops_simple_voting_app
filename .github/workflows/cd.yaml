@@ -174,7 +174,8 @@ jobs:
                           db_pass=${{ secrets.DB_PASSWORD }} \
                           db_name=${{ secrets.DB_NAME }} \
                           rds_endpoint=${{ env.RDS_ENDPOINT }} \
-                          rds_port=${{ env.RDS_PORT }}"
+                          rds_port=${{ env.RDS_PORT }} \
+                          seed_db=true"
 
       # 18. Smoke Test
       - name: Run Smoke Test
