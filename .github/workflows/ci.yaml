@@ -167,5 +167,3 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.REPO_SLUG }}:latest
             ${{ env.REGISTRY }}/${{ env.REPO_SLUG }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
