@@ -68,9 +68,9 @@
 
     - name: Get container ID of voting app
       ansible.builtin.command:
-        command: >
-          docker ps 
-          --filter "ancestor=ghcr.io/{{ github_repo }}/voting-app:latest" 
+        cmd: >
+          docker ps
+          --filter "ancestor=ghcr.io/{{ github_repo }}/voting-app:latest"
           --format "{{ '{{.Names}}' }}"
       register: container_name
       changed_when: false
@@ -81,6 +81,8 @@
       when: seed_db | default(false)
       no_log: true  # Prevents logging DB seed output
       changed_when: false
+      failed_when: container_name.stdout == ""
+
   handlers:
     - name: Restart Docker
       ansible.builtin.service:
