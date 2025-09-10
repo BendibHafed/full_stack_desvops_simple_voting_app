@@ -75,13 +75,14 @@
       when: not first_provisioning
       changed_when: true
 
-    - name: Remove old image (only if unused)
+    - name: Remove old image (only if unused and exists)
       ansible.builtin.command:
         cmd: docker image rm {{ docker_image }}
       register: image_rm_result
       changed_when: image_rm_result.rc == 0
       failed_when: image_rm_result.rc != 0 and
-                   "'is using its referenced image' not in image_rm_result.stderr"
+                  "'No such image' not in image_rm_result.stderr and
+                    'is using its referenced image' not in image_rm_result.stderr"
 
     - name: Pull latest voting app image
       ansible.builtin.command:
