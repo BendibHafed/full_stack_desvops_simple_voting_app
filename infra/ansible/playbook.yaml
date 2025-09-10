@@ -13,9 +13,7 @@
 
   vars:
     docker_image: "ghcr.io/{{ github_repo }}/voting-app:latest"
-    db_url: >
-      postgresql+psycopg2://{{ db_user }}:{{ db_pass }}
-      @{{ rds_endpoint }}:{{ rds_port }}/{{ db_name }}
+    db_url: postgresql+psycopg2://{{ db_user }}:{{ db_pass }}@{{ rds_endpoint }}:{{ rds_port }}/{{ db_name }}
 
   tasks:
     - name: Install Docker + Docker Compose + Dependencies
