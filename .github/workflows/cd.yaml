@@ -1,35 +1,32 @@
-name: CD
+name: CD - controlled Deployment
 
-on: 
+on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Target environment"
-        required: true
-        default: "production"
+
+permissions:
+  contents: read # To checkout the code
+  packages: read # To pull Docker images from GHCR
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
-      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
-
-    permissions:
-      contents: read
-      packages: read # Allows to pull Docker image from GHCR
 
     steps:
-      # 1. Checkout the repos
-      - name: Checkout Repo
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Configure AWS credentials (GitHub Actions)
+      # (Optional but Recommended, Crucial for private repos) Login to GHCR
+      - name: Log in to GitHub Container Registry
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -40,7 +37,6 @@ jobs:
       - name: Test AWS credentials
         run: aws sts get-caller-identity
 
-       # 3. Ensure Terraform Backend Exists
       - name: Ensure Terraform Backend Exists
         run: |
           set -e
@@ -71,30 +67,27 @@ jobs:
               --region "$REGION"
           fi
 
-      # 4. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.13.0
+          terraform_version: "1.13.0"
 
-      # 5. Terraform Init
       - name: Terraform Init
         working-directory: infra/terraform
         run: terraform init -input=false -no-color
 
-      # 6. Terraform Plan
       - name: Terraform plan
         working-directory: infra/terraform
-        run: terraform plan -input=false -no-color -out=tfplan
+        run: terraform plan -input=false -no-color -out=tfplan -var="db_password=${{ secrets.DB_PASSWORD }}"
 
-      # 7. Terraform Apply
-      - name: Terraform apply
+      - name: Apply Terraform Changes
         working-directory: infra/terraform
-        run: terraform apply -input=false -auto-approve -no-color tfplan
-
-      # 8. Get Terraform provisionning Outputs
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: terraform apply -input=false -auto-approve -no-color -var="db_password=${{ secrets.DB_PASSWORD }}" tfplan 
+      
       - name: Get Terraform Outputs
         id: tf_outputs
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         working-directory: infra/terraform
         run: |
           echo "EC2_IP=$(terraform output -raw ec2_public_ip)" >> $GITHUB_ENV
@@ -102,55 +95,38 @@ jobs:
           echo "RDS_PORT=$(terraform output -raw rds_port)" >> $GITHUB_ENV
           echo "APP_URL=$(terraform output -raw app_url)" >> $GITHUB_ENV
 
-      # 9. Install Ansible and Plugins
-      - name: Install Ansible + plugins
+      - name: Configure SSH Private Key
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          mkdir -p infra/ansible/
+          echo -e "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > infra/ansible/ssh_private_key.pem
+          chmod 600 infra/ansible/ssh_private_key.pem
+
+      - name: Install Ansible and plugins
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y ansible python3-boto3 python3-botocore
 
-      # 10. Wait for EC2 instance to be ready
-      - name: Wait for EC2 to be ready
+      - name: Create Ansible Inventory File
+        working-directory: infra/ansible
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          for i in {1..20}; do
+          echo "[voting]" > inventory.ini
+          echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem" >> inventory.ini
+
+      - name: Wait for EC2 to be ready
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          for i in {1..30}; do
             nc -zv ${{ env.EC2_IP }} 22 && break
             echo "Waiting for SSH port..."
             sleep 5
           done
 
-      # 11. Write SSH Private Key
-      - name: Write SSH Private Key
-        run: |
-          mkdir -p infra/ansible
-          echo -e "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > infra/ansible/ssh_private_key.pem
-          chmod 600 infra/ansible/ssh_private_key.pem
-
-      # 12. Normalize Line Endings
-      - name: Normalize Line Endings
-        working-directory: infra/ansible
-        run: |
-          sed -i 's/\r$//' ssh_private_key.pem
-      - name: Validate SSH Key Format
-        working-directory: infra/ansible
-        run: |
-          file ssh_private_key.pem
-          ssh-keygen -lf ssh_private_key.pem
-
-      # 13. Write Ansible inventory
-      - name: Write Ansible Inventory
-        working-directory: infra/ansible
-        run: |
-          echo "[voting]" > inventory.ini
-          echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem" >> inventory.ini
-
-
-      # 14. Print Fingerprint for SSH key
-      - name: Print SSH Key Fingerprint
-        working-directory: infra/ansible
-        run: ssh-keygen -lf ssh_private_key.pem
-
-      # 15. Test SSH Connection First
       - name: Test SSH Connection
         working-directory: infra/ansible
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           echo "Testing connection to ${{ env.EC2_IP }}..."
           ssh -i ssh_private_key.pem \
@@ -160,11 +136,11 @@ jobs:
               ubuntu@${{ env.EC2_IP }} \
               "echo ' SSH connection successful'"
 
-      # 17. Run Ansible Playbook
-      - name: Run Ansible
-        working-directory: infra/ansible  
+      - name: Deploy Application with Ansible Playbook
+        working-directory: infra/ansible
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           repo_slug=${GITHUB_REPOSITORY,,}
           ansible-playbook -i inventory.ini playbook.yaml \
@@ -177,9 +153,9 @@ jobs:
                           rds_port=${{ env.RDS_PORT }} \
                           seed_db=true"
 
-      # 18. Smoke Test
       - name: Run Smoke Test
         working-directory: infra/terraform
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           APP_URL=$(terraform output -raw app_url)
           echo "Testing app at $APP_URL"
