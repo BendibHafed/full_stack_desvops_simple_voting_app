@@ -1,6 +1,14 @@
 extends: default
 
 rules:
+  comments:
+    min-spaces-from-content: 1
+    indentation: false
+  braces:
+    max-spaces-inside: 1
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
   line-length:
-    max: 120  # may be changed
-    level: warning  
+    max: 120
+    level: warning
