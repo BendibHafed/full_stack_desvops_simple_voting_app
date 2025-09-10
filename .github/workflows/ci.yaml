@@ -30,16 +30,25 @@ jobs:
         run: flake8 backend
 
   lint-frontend:
-    name: Lint Fronted Code
+    name: Lint Frontend Code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install CSSLint
+        run: npm install -g csslint
+      
+      - name: Install HTML5Validator
+        run: pip install html5validator
+
       - name: Lint frontend HTML/CSS
         run: |
-          pip install html5validator
           html5validator --root frontend/templates
-
-          pip install csslint
           csslint frontend/static/style.css || true
 
   lint-infra:
