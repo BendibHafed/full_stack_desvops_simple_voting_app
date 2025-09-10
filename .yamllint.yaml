@@ -3,7 +3,6 @@ extends: default
 rules:
   comments:
     min-spaces-from-content: 1
-    indentation: false
   braces:
     max-spaces-inside: 1
   octal-values:
