@@ -4,7 +4,7 @@
 
   pre_tasks:
     - name: Ensure Python is installed (for Ansible facts)
-      raw: |
+      ansible.builtin.raw: |
         if ! command -v python3 >/dev/null 2>&1; then
           sudo apt-get update -y && sudo apt-get install -y python3
         fi
@@ -12,38 +12,40 @@
 
   vars:
     docker_image: "ghcr.io/{{ github_repo }}/voting-app:latest"
-    db_url: "postgresql+psycopg2://{{ db_user }}:{{ db_pass }}@{{ rds_endpoint }}:{{ rds_port }}/{{ db_name }}"
+    db_url: >-
+      "postgresql+psycopg2://{{ db_user }}:{{ db_pass }}
+      @{{ rds_endpoint }}:{{ rds_port }}/{{ db_name }}"
 
   tasks:
     - name: Install Docker + Docker Compose + Dependencies
-      apt:
+      ansible.builtin.apt:
         name:
           - python3-pip
           - docker.io
           - docker-compose
         state: present
-        update_cache: yes
+        update_cache: true
 
     - name: Install Docker SDK for Python
-      pip:
+      ansible.builtin.pip:
         name: docker
-  
+
     - name: Create app directory
-      file:
+      ansible.builtin.file:
         path: /home/ubuntu/voting-app
         state: directory
         owner: ubuntu
         mode: '0755'
 
     - name: Create log directory
-      file:
+      ansible.builtin.file:
         path: /home/ubuntu/voting-app/logs
         state: directory
         owner: ubuntu
         mode: '0755'
 
     - name: Generate docker-compose.yaml securely
-      copy:
+      ansible.builtin.copy:
         dest: /home/ubuntu/voting-app/docker-compose.yaml
         owner: ubuntu
         mode: '0640'
@@ -56,24 +58,30 @@
                 - "5000:5000"
               environment:
                 DATABASE_URL: "{{ db_url }}"
-    
+
     - name: Run Docker Compose
       ansible.builtin.command:
         cmd: sudo docker-compose up -d
         chdir: /home/ubuntu/voting-app
-    
+      changed_when: false
+
     - name: Get container ID of voting app
-      command: docker ps --filter "ancestor=ghcr.io/{{ github_repo }}/voting-app:latest" --format "{{'{{.Names}}'}}"
+      ansible.builtin.command:
+        cmd: docker ps --filter "ancestor=ghcr.io/\
+                  {{ github_repo }}/voting-app:latest" \
+                  --format "{{ '{{.Names}}' }}"
       register: container_name
       no_log: true  # Prevents logging container name if sensitive
+      changed_when: false
 
     - name: Seed the database
-      command: docker exec {{ container_name.stdout }} python -m backend.seed
+      ansible.builtin.command:
+        cmd: docker exec {{ container_name.stdout }} python -m backend.seed
       when: seed_db | default(false)
       no_log: true  # Prevents logging DB seed output
-
+      changed_when: false
   handlers:
-  - name: Restart Docker
-    service:
-      name: docker
-      state: restarted
+    - name: Restart Docker
+      ansible.builtin.service:
+        name: docker
+        state: restarted
