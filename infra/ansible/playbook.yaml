@@ -82,7 +82,7 @@
       no_log: true  # Prevents logging DB seed output
       changed_when: false
       failed_when: container_name.stdout == ""
-  
+
   handlers:
     - name: Restart Docker
       ansible.builtin.service:
