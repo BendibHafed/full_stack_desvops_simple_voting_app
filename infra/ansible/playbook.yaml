@@ -72,7 +72,6 @@
                   {{ github_repo }}/voting-app:latest" \
                   --format "{{ '{{.Names}}' }}"
       register: container_name
-      no_log: true  # Prevents logging container name if sensitive
       changed_when: false
 
     - name: Seed the database
