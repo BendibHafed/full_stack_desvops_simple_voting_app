@@ -97,7 +97,7 @@ jobs:
       - name: Terraform Lint
         run: |
           tflint --init
-          tflint infra/terraform --force
+          tflint --chdir=infra/terraform --force
 
   test-backend:
     name: Run Backend Tests
