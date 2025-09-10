@@ -10,20 +10,15 @@ migrate = Migrate()
 
 def create_app(config_name=None):
     # load environment variables
-    base_dir = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__), "..", "..")
-            )
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..",))
     load_dotenv(os.path.join(base_dir, ".env"))
 
     template_folder = os.path.join(base_dir, "frontend", "templates")
     static_folder = os.path.join(base_dir, "frontend", "static")
 
-    app = Flask(
-        __name__,
-        template_folder=template_folder,
-        static_folder=static_folder
-        )
+    app = Flask(__name__,
+                template_folder=template_folder,
+                static_folder=static_folder)
 
     # decide config
     if not config_name:
