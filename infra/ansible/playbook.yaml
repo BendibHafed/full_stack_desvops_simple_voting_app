@@ -1,3 +1,4 @@
+---
 - name: Deploy Voting App
   hosts: voting
   become: true
