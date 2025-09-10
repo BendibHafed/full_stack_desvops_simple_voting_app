@@ -68,9 +68,10 @@
 
     - name: Get container ID of voting app
       ansible.builtin.command:
-        cmd: docker ps --filter "ancestor=ghcr.io/\
-                  {{ github_repo }}/voting-app:latest" \
-                  --format "{{ '{{.Names}}' }}"
+        command: >
+          docker ps 
+          --filter "ancestor=ghcr.io/{{ github_repo }}/voting-app:latest" 
+          --format "{{ '{{.Names}}' }}"
       register: container_name
       changed_when: false
 
