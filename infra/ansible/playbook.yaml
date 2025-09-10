@@ -58,14 +58,30 @@
               environment:
                 DATABASE_URL: "{{ db_url }}"
 
-    - name: Remove old image (optional cleanup)
+    - name: Check if voting app container exists
+      ansible.builtin.command:
+        cmd: docker ps -a --filter "name=voting-app" --format "{{ '{{.Names}}' }}"
+      register: container_check
+      changed_when: false
+
+    - name: Set provisioning mode
+      ansible.builtin.set_fact:
+        first_provisioning: "{{ container_check.stdout == '' }}"
+
+    - name: Stop and remove old container (only if updating)
+      ansible.builtin.command:
+        cmd: docker-compose down
+        chdir: /home/ubuntu/voting-app
+      when: not first_provisioning
+      changed_when: true
+
+    - name: Remove old image (only if unused)
       ansible.builtin.command:
         cmd: docker image rm {{ docker_image }}
-      register: image_rm
-      changed_when: true
-      failed_when: >
-        image_rm.rc != 0 and
-        "'No such image'" not in image_rm.stderr
+      register: image_rm_result
+      changed_when: image_rm_result.rc == 0
+      failed_when: image_rm_result.rc != 0 and
+                   "'is using its referenced image' not in image_rm_result.stderr"
 
     - name: Pull latest voting app image
       ansible.builtin.command:
