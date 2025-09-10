@@ -12,7 +12,7 @@
 
   vars:
     docker_image: "ghcr.io/{{ github_repo }}/voting-app:latest"
-    db_url: >- 
+    db_url: >-
       "postgresql+psycopg2://{{ db_user }}:{{ db_pass }}
       @{{ rds_endpoint }}:{{ rds_port }}/{{ db_name }}"
 
@@ -58,15 +58,16 @@
                 - "5000:5000"
               environment:
                 DATABASE_URL: "{{ db_url }}"
-  
+
     - name: Run Docker Compose
       ansible.builtin.command:
         cmd: sudo docker-compose up -d
         chdir: /home/ubuntu/voting-app
-  
+
     - name: Get container ID of voting app
       command: |
-        docker ps --filter "ancestor=ghcr.io/{{ github_repo }}/voting-app:latest" \
+        docker ps --filter "ancestor=ghcr.io/\
+                  {{ github_repo }}/voting-app:latest" \
                   --format "{{'{{.Names}}'}}"
       register: container_name
       no_log: true  # Prevents logging container name if sensitive
