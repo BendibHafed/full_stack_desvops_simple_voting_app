@@ -39,8 +39,8 @@ jobs:
 
         - name: Final Confirmation Delay
           run: |
-            echo: " --> DESTRUCTION WILL START IN 15 SECs..."
-            echo: " --> CANCELNOW IF THIS IS A MISTAKE!"
+            echo " --> DESTRUCTION WILL START IN 15 SECs..."
+            echo " --> CANCELNOW IF THIS IS A MISTAKE!"
             sleep 15
 
         - name: Infrastructure Destruction
