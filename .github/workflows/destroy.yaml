@@ -54,6 +54,7 @@ jobs:
               s3://my-terraform-state-bucket-he1/voting-app/terraform.tfstate.$(date +%Y%m%d-%H%M%S).backup
 
         - name: Clean S3 State (Optional)
+          working-directory: infra/terraform
           if: success()
           run: |
             echo "Removing Terraform state file from S3..."
