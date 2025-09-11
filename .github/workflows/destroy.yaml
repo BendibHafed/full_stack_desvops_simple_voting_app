@@ -61,6 +61,12 @@ jobs:
         #     aws s3 rm s3://my-terraform-state-bucket-he1/voting-app/terraform.tfstate
         #     echo "State file removed successfully."
 
+        - name: Force Unlock Terraform State
+          run: |
+            aws dynamodb delete-item \
+              --table-name terraform-locks \
+              --key '{"LockID": {"S": "voting-app/terraform.tfstate"}}'
+
         - name: Verify Destruction Completion
           run: |
             echo " --> Destruction completed successfully"
