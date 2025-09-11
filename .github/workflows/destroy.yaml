@@ -51,7 +51,7 @@ jobs:
           run: |
             echo "Creating State Backup Before cleanup..."
             aws s3 cp s3://my-terraform-state-bucket-he1/voting-app/terraform.tfstate \
-              s3://my-terraform-state-bucket-he1/voting-app/terraform.tfstate.$(date +%Y%m%d-%H%M%S).backup
+              s3://my-terraform-state-bucket-he1/backups/voting-app/terraform.tfstate.$(date +%Y%m%d-%H%M%S).backup
 
         - name: Clean S3 State (Optional)
           working-directory: infra/terraform
