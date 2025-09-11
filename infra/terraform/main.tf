@@ -88,6 +88,8 @@ resource "aws_db_instance" "voting_db" {
   tags = {
     Name = "VotingAppDB"
   }
+
+  depends_on = [aws_iam_role.rds_monitoring_role]
 }
 
 resource "aws_iam_role" "rds_monitoring_role" {
