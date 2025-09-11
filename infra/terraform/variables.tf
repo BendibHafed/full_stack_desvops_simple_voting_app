@@ -10,17 +10,17 @@ variable "aws_profile" {
   default     = "default"
 }
 
-# variable "aws_access_key" {
-#   description = "AWS Access Key for CI/CD"
-#   type        = string
-#   sensitive   = true
-# }
+variable "aws_access_key" {
+  description = "AWS Access Key for CI/CD"
+  type        = string
+  sensitive   = true
+}
 
-# variable "aws_secret_key" {
-#   description = "AWS Secret Key for CI/CD"
-#   type        = string
-#   sensitive   = true
-# }
+variable "aws_secret_key" {
+  description = "AWS Secret Key for CI/CD"
+  type        = string
+  sensitive   = true
+}
 
 variable "ssh_public_key" {
   description = "SSH public key for EC2 access"
