@@ -83,9 +83,10 @@ jobs:
 
       - name: Terraform plan
         working-directory: infra/terraform
-        run: terraform plan -input=false -no-color -out=tfplan \
-          -var="db_password=${{ secrets.DB_PASSWORD }}" \
-          -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}"
+        run: |
+          terraform plan -input=false -no-color -out=tfplan \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}"
 
       - name: Apply Terraform Changes
         working-directory: infra/terraform
