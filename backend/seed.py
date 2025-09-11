@@ -17,7 +17,7 @@ def seed_data():
         poll1.choices = [
             Choice(text="Python"),
             Choice(text="C++"),
-            Choice(text="JavaScript")
+            Choice(text="Java")
         ]
 
         # Another poll
