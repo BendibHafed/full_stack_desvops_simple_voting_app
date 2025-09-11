@@ -27,6 +27,7 @@ variable "aws_secret_key" {
 variable "ssh_public_key" {
   description = "SSH public key for EC2 access"
   type        = string
+  default     = ""
 }
 
 variable "instance_type" {
@@ -57,5 +58,5 @@ variable "db_password" {
   description = "Database master password"
   type        = string
   sensitive   = true
-  default= ""
+  default     = ""
 }
