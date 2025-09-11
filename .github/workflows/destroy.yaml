@@ -44,7 +44,7 @@ jobs:
             sleep 15
 
         - name: Infrastructure Destruction
-          working-directory: terraform
+          working-directory: infra/terraform
           run: terraform destroy -auto-approve -input=false -no-color -lock=false
 
         - name: Backup Terraform State
