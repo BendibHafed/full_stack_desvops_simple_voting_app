@@ -53,13 +53,13 @@ jobs:
           working-directory: infra/terraform
           run: terraform destroy -auto-approve -input=false -no-color -lock=false
 
-        - name: Clean S3 State (Optional)
-          working-directory: infra/terraform
-          if: success()
-          run: |
-            echo "Removing Terraform state file from S3..."
-            aws s3 rm s3://my-terraform-state-bucket-he1/voting-app/terraform.tfstate
-            echo "State file removed successfully."
+        # - name: Clean S3 State (Optional)
+        #   working-directory: infra/terraform
+        #   if: success()
+        #   run: |
+        #     echo "Removing Terraform state file from S3..."
+        #     aws s3 rm s3://my-terraform-state-bucket-he1/voting-app/terraform.tfstate
+        #     echo "State file removed successfully."
 
         - name: Verify Destruction Completion
           run: |
