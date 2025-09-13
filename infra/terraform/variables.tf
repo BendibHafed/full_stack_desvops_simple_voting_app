@@ -4,24 +4,29 @@ variable "aws_region" {
   default     = "eu-west-3"
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "aws_profile" {
   description = "AWS CLI profile name (for local dev)"
   type        = string
   default     = "default"
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "aws_access_key" {
   description = "AWS Access Key for CI/CD"
   type        = string
   sensitive   = true
   default     = ""
+  # Reserved for GitHub Actions; not used in local mode
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "aws_secret_key" {
   description = "AWS Secret Key for CI/CD"
   type        = string
   sensitive   = true
   default     = ""
+  # Reserved for GitHub Actions; not used in local mode
 }
 
 variable "ssh_public_key" {

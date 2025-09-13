@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/voting-app
+  ACT: false
 
 permissions:
   contents: read
@@ -45,6 +45,16 @@ jobs:
       
       - name: Install HTML5Validator
         run: pip install html5validator
+      - name: Ensure Java is Installed
+
+        run: |
+          if ! command -v java >/dev/null 2>&1; then
+            echo "Java not found. Installing..."
+            sudo apt-get update
+            sudo apt-get install -y default-jre
+          else
+            echo "Java is already installed."          
+          fi
 
       - name: Lint frontend HTML/CSS
         run: |
@@ -84,11 +94,17 @@ jobs:
         continue-on-error: true
         run: terraform fmt -recursive -check
 
-      - name: Terraform Init & Validate
+      - name: Terraform Init & Validate (Local or Remote)
         working-directory: infra/terraform
         run: |
           rm -rf .terraform/
-          terraform init -backend=false -input=false -no-color
+          if [ "$ACT" = "true" ]; then
+            echo "Running Terraform in local mode"
+            terraform init -backend=false -input=false -no-color
+          else
+            echo "Running Terraform with backend"
+             terraform init -input=false -no-color
+          fi
           terraform validate -no-color
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -106,7 +122,8 @@ jobs:
     services:
       postgres:
         image: postgres:16
-        ports: ["5432:5432"]
+        ports:
+          - 5432:5432
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -121,14 +138,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      
+
       - name: Install Dependencies
         run: pip install -r backend/requirements.txt
-      
+
+      - name: Install PostgreSQL Client
+        run: |
+          if [ "$ACT" = "true" ]; then
+            echo "PostgreSQL client tools are not installed in the act runner container"
+            echo "Insalling PostgreSQL client..."
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+
       - name: Wait for PostgreSQL
         run: |
           until pg_isready -h localhost -p 5432; do
-            echo "Waiting for PostgreSQL..."
+            echo "Waiting for PostgreSQL on port 5432..."
             sleep 3
           done
       
@@ -141,29 +167,33 @@ jobs:
   build-and-push:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
-    needs: [test-backend, lint-infra]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: 
+      - test-backend
+      - lint-infra
+      - lint-frontend
     steps:
       - uses: actions/checkout@v4
 
-      - name: Log in to GHCR
+      - name: Log in to GHCR (Remote only)
         uses: docker/login-action@v3
+        if: ${{ env.ACT != 'true' }}
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.MY_TOKEN }}
 
-      - name: Set lowercase repo slug
+      - name: Build Docker Image (Local)
+        if: ${{ env.ACT == 'true' }}
         run: |
-          REPO_SLUG=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
-          echo "REPO_SLUG=$REPO_SLUG" >> $GITHUB_ENV
+          IMAGE_NAME=$(echo "${{ github.repository }}/voting-app" | tr '[:upper:]' '[:lower:]')
+          docker build -t $REGISTRY/$IMAGE_NAME:latest -f backend/Dockerfile .
+          docker tag $REGISTRY/$IMAGE_NAME:latest $REGISTRY/$IMAGE_NAME:${{ github.sha }}
 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./backend/Dockerfile
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.REPO_SLUG }}:latest
-            ${{ env.REGISTRY }}/${{ env.REPO_SLUG }}:${{ github.sha }}
+      - name: Build and Push Docker Image (Remote)
+        if: ${{ env.ACT != 'true' }}
+        run: |
+          IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t $REGISTRY/$IMAGE_NAME:latest -f backend/Dockerfile .
+          docker tag $REGISTRY/$IMAGE_NAME:latest $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          docker push $REGISTRY/$IMAGE_NAME:latest
+          docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
