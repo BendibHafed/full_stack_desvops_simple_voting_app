@@ -185,7 +185,7 @@ jobs:
       - name: Build Docker Image (Local)
         if: ${{ env.ACT == 'true' }}
         run: |
-          IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME=$(echo "${{ github.repository }}/voting-app" | tr '[:upper:]' '[:lower:]')
           docker build -t $REGISTRY/$IMAGE_NAME:latest -f backend/Dockerfile .
           docker tag $REGISTRY/$IMAGE_NAME:latest $REGISTRY/$IMAGE_NAME:${{ github.sha }}
 
