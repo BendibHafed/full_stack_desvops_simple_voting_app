@@ -176,7 +176,7 @@ jobs:
 
       - name: Log in to GHCR (Remote only)
         uses: docker/login-action@v3
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && !env.ACT }}
+        if: ${{ env.ACT != 'true' }}
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
