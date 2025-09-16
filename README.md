@@ -61,6 +61,9 @@ docker compose up -d --build
 ```
 Frontend: http://localhost:5000
 
+- Frontend: http://localhost:5000
+- Health check: http://localhost:5000/healthz
+
 # Run Locally without Docker
 ```bash
 # Install dependencies
@@ -93,6 +96,37 @@ pytest
 
 ---
 
+## Simulate CI Locally with ACT (requires act installed)
+Simulates a pull-request event and runs:
+    - Linting.
+    - Unit/Integration testing
+    - Terraform & Ansible validation.
+    - Docker Build.
+
+- Command:
+```
+ $ act pull_request -W .github/workflows/ci.yaml \
+    -e <(echo '{
+      "ACT": "true",
+    }')
+```
+
+## Simulate CD Locally with ACT (requires act installed)
+Simulates a Merge & Dispatch event and:
+    - Runs the application locally using Docker-compose. 
+    - Starts LocalStack container and emulates AWS services.
+    - initializes Terraform and plans it with local backend.
+    - Skips remote deployment steps (EC2, RDS, SSH, Ansible).
+
+- Command:
+```
+ $ act workflow_dispatch -W .github/workflows/cd.yaml \
+    -e <(echo '{
+      "ACT": "true",
+      "approve_deployment": "yes"
+    }')
+
+```
 ## Deployment Workflow
 - CI pipeline runs on PR:
 - Python lint 
