@@ -148,9 +148,9 @@ Simulates a Merge & Dispatch event and:
 
 ## Future Improvements
 - Add authentication
-- Containerize with Docker & Kubernetes
-- Add monitoring (Prometheus + Grafana)
-- Improve frontend with React
+- Containerize with Docker & Kubernetes.
+- Add monitoring (Prometheus + Grafana).
+- Improve frontend with React.
 
 ---
 
