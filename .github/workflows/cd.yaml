@@ -9,6 +9,8 @@ on:
         description: 'Approve and continue deployment?'
         required: true
         default: 'yes'
+env:
+  ACT: false
 
 permissions:
   contents: read # To checkout the code
@@ -23,9 +25,65 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Debug ACT Mode
+        run: |
+          if [ "$ACT" = "true" ]; then
+            echo " ACT mode detected — running locally"
+          else
+            echo " GitHub Actions mode — deploying remotely"
+          fi
+
+      - name: Install Docker Compose (ACT only)
+        if: ${{ env.ACT == 'true' }}
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      - name: Install AWS CLI (ACT only)
+        if: ${{ env.ACT == 'true' }}
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws --version
+
+      - name: Simulate App Locally with Docker Compose
+        if: ${{ env.ACT == 'true' }}
+        run: |
+          docker-compose -f docker-compose.yaml up -d
+          echo "Waiting for the App to be ready..."
+          for i in {1..20}; do
+            if curl -fs http://localhost:5000/healthz; then
+              echo "App is healthy!"
+              break
+            fi
+            sleep 3
+          done
+          docker-compose down
+
+      - name: Start LocalStack (ACT only)
+        if: ${{ env.ACT == 'true' }}
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          if docker ps -a --format '{{.Names}}' | grep -q '^localstack$'; then
+            echo "Removing existing LocalStack container..."
+            docker rm -f localstack || true
+          fi
+
+          echo "Starting LocalStack..."
+          docker run -d --name localstack -p 4566:4566 -p 4571:4571 localstack/localstack
+          sleep 10
+
+          echo "Creating S3 bucket in LocalStack..."
+          aws --endpoint-url=http://localhost:4566 s3 mb s3://my-local-bucket
+
       # (Optional but Recommended, Crucial for private repos) Login to GHCR
       - name: Log in to GitHub Container Registry
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.ACT != 'true' }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -33,6 +91,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure AWS credentials
+        if: ${{ !env.ACT }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -40,9 +99,11 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Test AWS credentials
+        if: ${{ env.ACT != 'true' }}
         run: aws sts get-caller-identity
 
       - name: Ensure Terraform Backend Exists
+        if: ${{ env.ACT != 'true' }}
         run: |
           set -e
           BUCKET="my-terraform-state-bucket-he1"
@@ -77,11 +138,29 @@ jobs:
         with:
           terraform_version: "1.13.0"
 
-      - name: Terraform Init
+      # Terraform Init (LocalStack)
+      - name: Terraform Init (Local State)
+        if: ${{ env.ACT }}
         working-directory: infra/terraform
-        run: terraform init -reconfigure -input=false -no-color
+        run: |
+          rm -rf .terraform .terraform.lock.hcl backend_override.tf
+          cat > backend_override.tf <<EOF
+          terraform {
+            backend "local" {
+              path = "terraform.tfstate"
+            }
+          }
+          EOF
+          terraform init -reconfigure -input=false -no-color
+
+      # Terraform Init (AWS real S3 backend)
+      - name: Terraform Init (AWS)
+        if: ${{ !env.ACT }}
+        working-directory: infra/terraform
+        run: terraform init -reconfigure -input=false
 
       - name: Terraform plan
+        if: ${{ !env.ACT }}
         working-directory: infra/terraform
         run: |
           terraform plan -input=false -no-color -out=tfplan \
@@ -90,7 +169,7 @@ jobs:
 
       - name: Apply Terraform Changes
         working-directory: infra/terraform
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.ACT != 'true' }}
         run: |
           terraform apply -input=false -auto-approve -no-color \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
@@ -98,7 +177,7 @@ jobs:
       
       - name: Get Terraform Outputs
         id: tf_outputs
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.ACT != 'true' }}
         working-directory: infra/terraform
         run: |
           echo "EC2_IP=$(terraform output -raw ec2_public_ip)" >> $GITHUB_ENV
@@ -107,27 +186,27 @@ jobs:
           echo "APP_URL=$(terraform output -raw app_url)" >> $GITHUB_ENV
 
       - name: Configure SSH Private Key
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.ACT != 'true' }}
         run: |
           mkdir -p infra/ansible/
           echo -e "${{ secrets.ANSIBLE_PRIVATE_KEY }}" > infra/ansible/ssh_private_key.pem
           chmod 600 infra/ansible/ssh_private_key.pem
 
       - name: Install Ansible and plugins
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.ACT != 'true' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y ansible python3-boto3 python3-botocore
 
       - name: Create Ansible Inventory File
         working-directory: infra/ansible
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.ACT != 'true' }}
         run: |
           echo "[voting]" > inventory.ini
           echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=ssh_private_key.pem" >> inventory.ini
 
       - name: Wait for EC2 to be ready
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.ACT != 'true' }}
         run: |
           for i in {1..30}; do
             nc -zv ${{ env.EC2_IP }} 22 && break
@@ -137,7 +216,7 @@ jobs:
 
       - name: Test SSH Connection
         working-directory: infra/ansible
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.ACT != 'true' }}
         run: |
           echo "Testing connection to ${{ env.EC2_IP }}..."
           ssh -i ssh_private_key.pem \
@@ -151,7 +230,7 @@ jobs:
         working-directory: infra/ansible
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.ACT != 'true' }}
         run: |
           repo_slug=${GITHUB_REPOSITORY,,}
           ansible-playbook -i inventory.ini playbook.yaml \
@@ -166,7 +245,7 @@ jobs:
 
       - name: Run Smoke Test
         working-directory: infra/terraform
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && env.ACT != 'true' }}
         run: |
           APP_URL=$(terraform output -raw app_url)
           echo "Testing app at $APP_URL"
