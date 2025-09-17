@@ -59,8 +59,6 @@ Run with Docker Compose
 ```bash
 docker compose up -d --build
 ```
-Frontend: http://localhost:5000
-
 - Frontend: http://localhost:5000
 - Health check: http://localhost:5000/healthz
 
@@ -97,13 +95,13 @@ pytest
 ---
 
 ## Simulate CI Locally with ACT (requires act installed)
-Simulates a pull-request event and runs:
-    - Linting.
-    - Unit/Integration testing
-    - Terraform & Ansible validation.
-    - Docker Build.
+Simulates a pull-request event and runs: <br>
+    - Linting. <br>
+    - Unit/Integration testing. <br>
+    - Terraform & Ansible validation. <br>
+    - Docker Build. <br>
 
-- Command:
+- Command: <br>
 ```
  $ act pull_request -W .github/workflows/ci.yaml \
     -e <(echo '{
@@ -112,13 +110,13 @@ Simulates a pull-request event and runs:
 ```
 
 ## Simulate CD Locally with ACT (requires act installed)
-Simulates a Merge & Dispatch event and:
-    - Runs the application locally using Docker-compose. 
-    - Starts LocalStack container and emulates AWS services.
-    - initializes Terraform and plans it with local backend.
-    - Skips remote deployment steps (EC2, RDS, SSH, Ansible).
+Simulates a Merge & Dispatch event and: <br>
+    - Runs the application locally using Docker-compose. <br>
+    - Starts LocalStack container and emulates AWS services. <br>
+    - initializes Terraform and plans it with local backend. <br>
+    - Skips remote deployment steps (EC2, RDS, SSH, Ansible). <br>
 
-- Command:
+- Command: <br>
 ```
  $ act workflow_dispatch -W .github/workflows/cd.yaml \
     -e <(echo '{
